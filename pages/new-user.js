@@ -39,7 +39,7 @@ export default function NewUser({}) {
   };
   const handleFormSubmit = e => {
     e.preventDefault();
-    fetch("/api/create-new-user", {
+    fetch("/api/login/create-new-user", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

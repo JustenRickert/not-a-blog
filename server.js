@@ -3,8 +3,14 @@ const { parse } = require("url");
 const next = require("next");
 const bodyParser = require("body-parser");
 const session = require("express-session");
+const { MongoClient } = require("mongodb");
 
-const { newUser, authenticateUser } = require("./app/user.js");
+const createLoginRouter = require("./app/routes/login.js");
+const createUserRouter = require("./app/routes/user.js");
+
+const mongoUrl = "mongodb://localhost:27017";
+
+const mongoDbName = "notblog";
 
 const server = express();
 
@@ -24,48 +30,21 @@ if (server.get("env") === "production") {
   sess.cookie.secure = true;
 }
 
-app.prepare().then(() => {
-  server.use(bodyParser.urlencoded({ extended: false }));
-  server.use(bodyParser.json());
-  server.use(session(expressSessionConfig));
+server.use(bodyParser.urlencoded({ extended: false }));
+server.use(bodyParser.json());
+server.use(session(expressSessionConfig));
 
-  server.post("/api/create-new-user", (req, res) => {
-    const { username, password } = req.body;
-    newUser(username, password)
-      .then(() => {
-        req.session.authenticated = true;
-        req.session.username = username;
-        res.redirect("/index");
-      })
-      .catch(() => res.status(400).send());
-  });
+Promise.all([
+  app.prepare(),
+  MongoClient.connect(mongoUrl).catch(error => {
+    console.error(err);
+    process.exit(1);
+  })
+]).then(([, client]) => {
+  const db = client.db(mongoDbName);
 
-  server.post("/api/login-user", (req, res) => {
-    const { username, password } = req.body;
-    authenticateUser(username, password)
-      .then(() => {
-        req.session.authenticated = true;
-        req.session.username = username;
-        res.json({
-          userInformation: {
-            username: req.session.username
-          }
-        });
-      })
-      .catch(() => req.status(400).send());
-  });
-
-  server.get("/api/user-information", (req, res) => {
-    if (req.session.authenticated) {
-      return res.json({
-        userInformation: {
-          username: req.session.username
-        }
-      });
-    } else {
-      return res.status(403).send();
-    }
-  });
+  server.use("/api/login", createLoginRouter(db));
+  server.use("/api/user", createUserRouter());
 
   server.all("*", handle);
 

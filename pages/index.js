@@ -16,7 +16,7 @@ const slice = createSlice({
 });
 
 Home.getInitialProps = ({ req }) => {
-  return fetch(domainPath(req, "/api/user-information"), {
+  return fetch(domainPath(req, "/api/user/user-information"), {
     headers: req && req.headers
   }).then(res => {
     switch (res.status) {
