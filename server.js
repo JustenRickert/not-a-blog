@@ -5,8 +5,8 @@ const bodyParser = require("body-parser");
 const session = require("express-session");
 const { MongoClient } = require("mongodb");
 
-const createLoginRouter = require("./app/routes/login.js");
-const createUserRouter = require("./app/routes/user.js");
+const createLoginRouter = require("./app/login.js");
+const createUserRouter = require("./app/user.js");
 
 const mongoUrl = "mongodb://localhost:27017";
 
@@ -44,7 +44,7 @@ Promise.all([
   const db = client.db(mongoDbName);
 
   server.use("/api/login", createLoginRouter(db));
-  server.use("/api/user", createUserRouter());
+  server.use("/api/user", createUserRouter(db));
 
   server.all("*", handle);
 

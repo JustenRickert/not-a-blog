@@ -1,6 +1,6 @@
 const express = require("express");
 
-const { newUser, authenticateUser } = require("../api/user.js");
+const { newUser, authenticateUser } = require("./api/user.js");
 
 module.exports = createLoginRouter = db => {
   const router = express.Router();
@@ -20,9 +20,7 @@ module.exports = createLoginRouter = db => {
       .then(result => {
         req.session.authenticated = true;
         req.session.username = req.body.username;
-        res.json({
-          userInformation: result
-        });
+        res.status(200).send();
       })
       .catch(e => {
         console.error(e);

@@ -1,7 +1,7 @@
 import { useReducer } from "react";
 
-import { createSlice, update } from "../lib/util.js";
-import Page from "../lib/page.js";
+import { createSlice, update } from "../client/util.js";
+import Page from "../client/page.js";
 
 const slice = createSlice({
   name: "state",
@@ -46,7 +46,6 @@ export default function NewUser({}) {
       },
       body: JSON.stringify(state.login)
     }).then(res => {
-      console.log(res.status);
       switch (res.status) {
         case 200:
         case 302:

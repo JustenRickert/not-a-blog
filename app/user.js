@@ -1,11 +1,11 @@
 const express = require("express");
 
-module.exports = createUserRouter = () => {
+const { userInformation } = require("./api/user.js");
+
+module.exports = createUserRouter = db => {
   const router = express.Router();
 
   router.use((req, res, next) => {
-    console.log("auth?");
-    console.log(req.session.authenticated);
     if (!req.session.authenticated) {
       return res.status(403).send();
     }
@@ -13,12 +13,9 @@ module.exports = createUserRouter = () => {
   });
 
   router.get("/user-information", (req, res) => {
-    console.log("user info", req.session);
-    return res.json({
-      userInformation: {
-        username: req.session.username
-      }
-    });
+    return userInformation(db, { username: req.session.username }).then(
+      userInformation => res.json(userInformation)
+    );
   });
 
   return router;

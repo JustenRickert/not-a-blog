@@ -52,11 +52,7 @@ export default function Login({ onChangeUserInformation }) {
     }).then(res => {
       switch (res.status) {
         case 200:
-          res
-            .json()
-            .then(({ userInformation }) =>
-              onChangeUserInformation(userInformation)
-            );
+          onChangeUserInformation();
           break;
         case 400:
           dispatch(slice.actions.setError(true));

@@ -2,9 +2,17 @@ const assert = require("assert");
 
 const { USER } = require("./constants.js");
 
+module.exports.userInformation = (db, { username }) => {
+  assert(typeof username === "string", "`username` is a string");
+  return db
+    .collection(USER)
+    .findOne({ username })
+    .then(({ password: _password, ...rest }) => rest);
+};
+
 module.exports.authenticateUser = (db, { username, password }) => {
-  assert(typeof username === "string", "username is a string");
-  assert(typeof password === "string", "password is a string");
+  assert(typeof username === "string", "`username` is a string");
+  assert(typeof password === "string", "`password` is a string");
   return db
     .collection(USER)
     .findOne({ username, password })
@@ -15,8 +23,8 @@ module.exports.authenticateUser = (db, { username, password }) => {
 };
 
 module.exports.newUser = (db, { username, password }) => {
-  assert(typeof username === "string", "username is a string");
-  assert(typeof password === "string", "password is a string");
+  assert(typeof username === "string", "`username` is a string");
+  assert(typeof password === "string", "`password` is a string");
   const collection = db.collection(USER);
   return collection.findOne({ username }).then(result => {
     if (result) throw { error: "USERNAME_EXISTS_ALREADY" };
