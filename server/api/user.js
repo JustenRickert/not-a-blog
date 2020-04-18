@@ -1,7 +1,8 @@
 const assert = require("assert");
 
 const { withRandomOffset } = require("../util.js");
-const { USER, RETRIEVAL_POINTS_PER_MS } = require("./constants.js");
+const { USER } = require("./constants.js");
+const { RETRIEVAL_POINTS_PER_MS } = require("../../constants.js");
 
 module.exports.userInformation = (db, { username }) => {
   assert(typeof username === "string", "`username` is a string");
@@ -46,10 +47,8 @@ module.exports.updatePoints = (db, { username, updateDate }) => {
   return col
     .findOne({ username })
     .then(({ points, lastRetrievePoints, _id }) => {
-      const secondsDiff = updateDate.valueOf() - lastRetrievePoints.valueOf();
-      const pointsDelta = withRandomOffset(
-        RETRIEVAL_POINTS_PER_MS * secondsDiff
-      );
+      const msDiff = updateDate.valueOf() - lastRetrievePoints.valueOf();
+      const pointsDelta = withRandomOffset(RETRIEVAL_POINTS_PER_MS * msDiff);
       return col.findOneAndUpdate(
         { _id },
         {
