@@ -38,3 +38,5 @@ export const update = (state, key, fnOrState) => {
     [first(key)]: update(state[first(key)], rest(key), fnOrState)
   };
 };
+
+export const formatPoints = points => Math.floor(points).toLocaleString();

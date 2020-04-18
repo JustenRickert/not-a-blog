@@ -17,7 +17,7 @@ module.exports = createLoginRouter = db => {
 
   router.post("/login-user", (req, res) => {
     authenticateUser(db, req.body)
-      .then(result => {
+      .then(() => {
         req.session.authenticated = true;
         req.session.username = req.body.username;
         res.status(200).send();

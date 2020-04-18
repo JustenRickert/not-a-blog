@@ -1,6 +1,7 @@
 const assert = require("assert");
 
-const { USER } = require("./constants.js");
+const { withRandomOffset } = require("../util.js");
+const { USER, RETRIEVAL_POINTS_PER_MS } = require("./constants.js");
 
 module.exports.userInformation = (db, { username }) => {
   assert(typeof username === "string", "`username` is a string");
@@ -38,4 +39,32 @@ module.exports.newUser = (db, { username, password }) => {
   });
 };
 
-module.exports.updatePoints = db => {};
+module.exports.updatePoints = (db, { username, updateDate }) => {
+  assert(typeof username === "string", "`username` is a string");
+  assert(updateDate instanceof Date, "`updateDate` should be a date");
+  const col = db.collection(USER);
+  return col
+    .findOne({ username })
+    .then(({ points, lastRetrievePoints, _id }) => {
+      const secondsDiff = updateDate.valueOf() - lastRetrievePoints.valueOf();
+      const pointsDelta = withRandomOffset(
+        RETRIEVAL_POINTS_PER_MS * secondsDiff
+      );
+      return col.findOneAndUpdate(
+        { _id },
+        {
+          $set: {
+            points: points + pointsDelta,
+            lastRetrievePoints: updateDate
+          }
+        },
+        {
+          returnOriginal: false,
+          projection: {
+            points: true,
+            lastRetrievePoints: true
+          }
+        }
+      );
+    });
+};

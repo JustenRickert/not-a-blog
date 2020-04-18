@@ -16,10 +16,10 @@ const mongoDbName = "notblog";
 const server = express();
 
 const dev = process.env.NODE_ENV !== "production";
-const app = next({ dev: server.get("env") === "development" });
+const app = next({ dev });
 const handle = app.getRequestHandler();
 
-const mongoClientPromise = MongoClient.connect(mongoUrl).catch(error => {
+const mongoClientPromise = MongoClient.connect(mongoUrl).catch(err => {
   console.error(err);
   process.exit(1);
 });
@@ -35,10 +35,10 @@ const expressSessionConfig = {
   cookie: {}
 };
 
-if (server.get("env") === "production") {
-  server.set("trust proxy", 1);
-  sess.cookie.secure = true;
-}
+// if (server.get("env") === "production") {
+//   server.set("trust proxy", 1);
+//   expressSessionConfig.cookie.secure = true;
+// }
 
 server.use(bodyParser.urlencoded({ extended: false }));
 server.use(bodyParser.json());
