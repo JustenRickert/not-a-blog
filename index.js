@@ -4,9 +4,10 @@ const next = require("next");
 const bodyParser = require("body-parser");
 const session = require("express-session");
 const { MongoClient } = require("mongodb");
+const MongoSessionStore = require("connect-mongo")(session);
 
-const createLoginRouter = require("./app/login.js");
-const createUserRouter = require("./app/user.js");
+const createLoginRouter = require("./server/login.js");
+const createUserRouter = require("./server/user.js");
 
 const mongoUrl = "mongodb://localhost:27017";
 
@@ -18,10 +19,19 @@ const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev: server.get("env") === "development" });
 const handle = app.getRequestHandler();
 
+const mongoClientPromise = MongoClient.connect(mongoUrl).catch(error => {
+  console.error(err);
+  process.exit(1);
+});
+
 const expressSessionConfig = {
   secret: "TODO change me",
   saveUninitialized: false,
   resave: false,
+  store: new MongoSessionStore({
+    clientPromise: mongoClientPromise,
+    url: mongoUrl
+  }),
   cookie: {}
 };
 
@@ -34,13 +44,7 @@ server.use(bodyParser.urlencoded({ extended: false }));
 server.use(bodyParser.json());
 server.use(session(expressSessionConfig));
 
-Promise.all([
-  app.prepare(),
-  MongoClient.connect(mongoUrl).catch(error => {
-    console.error(err);
-    process.exit(1);
-  })
-]).then(([, client]) => {
+Promise.all([app.prepare(), mongoClientPromise]).then(([, client]) => {
   const db = client.db(mongoDbName);
 
   server.use("/api/login", createLoginRouter(db));
