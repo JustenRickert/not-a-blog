@@ -5,6 +5,18 @@ export const domainPath = (req, urlPath) => {
   return [req.protocol, "://", path.join(req.get("host"), urlPath)].join("");
 };
 
+const difference = (as, bs, toKey = x => x) =>
+  as.filter(a => bs.some(b => toKey(a) !== toKey(b)));
+
+export const omit = (o, keys) =>
+  difference(Object.keys(o), keys).reduce(
+    (acc, key) => ({
+      ...acc,
+      [key]: o[key]
+    }),
+    {}
+  );
+
 const first = xs => xs[0];
 
 const rest = xs => xs.slice(1);

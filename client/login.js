@@ -1,6 +1,5 @@
 import fetch from "isomorphic-unfetch";
 import { useReducer } from "react";
-import Page from "./page.js";
 import Link from "next/link";
 import { createSlice, update, domainPath } from "./util.js";
 
@@ -62,7 +61,7 @@ export default function Login({ onChangeUserInformation }) {
     });
   };
   return (
-    <Page>
+    <>
       <form>
         <label htmlFor="username">Username: </label>
         <input
@@ -85,6 +84,6 @@ export default function Login({ onChangeUserInformation }) {
       <Link href="/new-user">
         <button>Create new Account</button>
       </Link>
-    </Page>
+    </>
   );
 }

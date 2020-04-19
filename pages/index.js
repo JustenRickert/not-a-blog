@@ -1,25 +1,32 @@
 import fetch from "isomorphic-unfetch";
 import { useReducer } from "react";
+import dynamic from "next/dynamic";
 
 import { createSlice, update, domainPath } from "../client/util.js";
 import Page from "../client/page.js";
-import Main from "../client/main.js";
 import Login from "../client/login.js";
+
+const Main = dynamic(() => import("../client/main.js"));
 
 const fetchUserInformation = req =>
   fetch(domainPath(req, "/api/user/user-information"), {
     headers: req && req.headers
   });
 
+const fetchIndustriesInformation = req =>
+  fetch(domainPath(req, "/api/industries/industries-information"), {
+    headers: req && req.headers
+  });
+
 const serializeDateInformation = ({
   createdDate,
-  lastRetrievePoints,
+  lastUpdatePointsDate,
   lastPopulationChangeDate,
   ...userInformation
 }) => ({
   ...userInformation,
   createdDate: new Date(createdDate),
-  lastRetrievePoints: new Date(lastRetrievePoints),
+  lastUpdatePointsDate: new Date(lastUpdatePointsDate),
   lastPopulationChangeDate: new Date(lastPopulationChangeDate)
 });
 
@@ -37,21 +44,30 @@ const slice = createSlice({
 });
 
 Home.getInitialProps = ({ req }) => {
-  return fetchUserInformation(req).then(res => {
-    switch (res.status) {
-      case 200:
-        return res.json().then(userInformation => ({ userInformation }));
-      case 403:
-        return { userInformation: null };
-      default:
-        throw new Error("not impl");
+  return Promise.all([
+    fetchUserInformation(req),
+    fetchIndustriesInformation(req)
+  ]).then(responses => {
+    if (responses.some(res => res.status === 403)) return {};
+    if (responses.some(res => res.status !== 200)) {
+      console.log(responses);
+      throw new Error("Problem retrieving information on server");
     }
+    return Promise.all(responses.map(res => res.json())).then(
+      ([userInformation, industriesInformation]) => ({
+        userInformation,
+        industriesInformation: (console.log(industriesInformation),
+        industriesInformation)
+      })
+    );
   });
 };
 
-export default function Home({ userInformation, ...rest }) {
+export default function Home({ userInformation, industriesInformation }) {
   const [state, dispatch] = useReducer(slice.reducer, {
-    userInformation: serializeDateInformation(userInformation)
+    userInformation:
+      userInformation && serializeDateInformation(userInformation),
+    industriesInformation
   });
   const handleUserInformationChange = () =>
     fetchUserInformation()
@@ -60,6 +76,17 @@ export default function Home({ userInformation, ...rest }) {
         dispatch(slice.actions.setUserInformation(userInformation))
       );
   if (!state.userInformation)
-    return <Login onChangeUserInformation={handleUserInformationChange} />;
-  return <Main userInformation={state.userInformation} />;
+    return (
+      <Page>
+        <Login onChangeUserInformation={handleUserInformationChange} />
+      </Page>
+    );
+  return (
+    <Page>
+      <Main
+        userInformation={state.userInformation}
+        industriesInformation={state.industriesInformation}
+      />
+    </Page>
+  );
 }

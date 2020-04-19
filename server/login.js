@@ -7,9 +7,9 @@ module.exports = createLoginRouter = db => {
 
   router.post("/create-new-user", (req, res) => {
     newUser(db, req.body)
-      .then(() => {
+      .then(result => {
         req.session.authenticated = true;
-        req.session.username = req.body.username;
+        req.session.userId = result.insertedId;
         res.redirect("/index");
       })
       .catch(() => res.status(400).send());
@@ -17,15 +17,12 @@ module.exports = createLoginRouter = db => {
 
   router.post("/login-user", (req, res) => {
     authenticateUser(db, req.body)
-      .then(() => {
+      .then(resultId => {
         req.session.authenticated = true;
-        req.session.username = req.body.username;
+        req.session.userId = resultId;
         res.status(200).send();
       })
-      .catch(e => {
-        console.error(e);
-        res.status(400).send();
-      });
+      .catch(() => res.status(400).send());
   });
 
   return router;

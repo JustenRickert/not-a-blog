@@ -8,6 +8,7 @@ const MongoSessionStore = require("connect-mongo")(session);
 
 const createLoginRouter = require("./server/login.js");
 const createUserRouter = require("./server/user.js");
+const createIndustriesRoute = require("./server/industries.js");
 
 const mongoUrl = "mongodb://localhost:27017";
 
@@ -49,6 +50,7 @@ Promise.all([app.prepare(), mongoClientPromise]).then(([, client]) => {
 
   server.use("/api/login", createLoginRouter(db));
   server.use("/api/user", createUserRouter(db));
+  server.use("/api/industries", createIndustriesRoute(db));
 
   server.all("*", handle);
 

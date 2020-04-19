@@ -7,3 +7,10 @@ module.exports.range = n =>
   Array(n)
     .fill()
     .map((_, i) => i);
+
+module.exports.authenticationMiddleware = (req, res, next) => {
+  if (!req.session.authenticated) {
+    return res.status(403).send();
+  }
+  next();
+};

@@ -1,22 +1,15 @@
 const assert = require("assert");
+const { ObjectId } = require("mongodb");
 
 const { range, withRandomOffset } = require("../util.js");
 const { USER_COLLECTION, POPULATION_INITIAL } = require("./constants.js");
 const {
-  RETRIEVAL_POINTS_PER_MS,
+  POINTS_PER_MS,
   POPULATION_CAPACITY_INITIAL,
   POPULATION_CAPACITY_PER_POINT,
   POPULATION_GROWTH_PERCENTAGE,
   POPULATION_GROWTH_SECONDS
 } = require("../../constants.js");
-
-module.exports.userInformation = (db, { username }) => {
-  assert(typeof username === "string", "`username` is a string");
-  return db
-    .collection(USER_COLLECTION)
-    .findOne({ username })
-    .then(({ password: _password, ...rest }) => rest);
-};
 
 module.exports.authenticateUser = (db, { username, password }) => {
   assert(typeof username === "string", "`username` is a string");
@@ -26,7 +19,7 @@ module.exports.authenticateUser = (db, { username, password }) => {
     .findOne({ username, password })
     .then(result => {
       if (!result) throw { error: "NO_USERNAME_OR_NO_BAD_PASSWORD" };
-      return { username };
+      return result._id;
     });
 };
 
@@ -42,18 +35,29 @@ module.exports.newUser = (db, { username, password }) => {
       points: 0,
       population: POPULATION_INITIAL,
       createdDate: new Date(),
-      lastRetrievePoints: new Date(),
+      lastUpdatePointsDate: new Date(),
       lastPopulationChangeDate: new Date()
     });
   });
 };
 
-module.exports.updatePopulation = (db, { username, updateDate }) => {
-  assert(typeof username === "string", "`username` is a string");
+// AUTHENTICATED ROUTES
+
+module.exports.userInformation = (db, { id }) => {
+  assert(typeof id === "string", "`id` is a string");
+  console.log("WHAT", id);
+  return db
+    .collection(USER_COLLECTION)
+    .findOne({ _id: ObjectId(id) })
+    .then(({ password: _password, ...rest }) => rest);
+};
+
+module.exports.updatePopulation = (db, { id, updateDate }) => {
+  assert(typeof id === "string", "`id` is a string");
   assert(updateDate instanceof Date, "`updateDate` is a Date");
   const col = db.collection(USER_COLLECTION);
   return col
-    .findOne({ username })
+    .findOne({ _id: ObjectId(id) })
     .then(({ points, population, lastPopulationChangeDate, _id }) => {
       const capacity =
         POPULATION_CAPACITY_INITIAL + points * POPULATION_CAPACITY_PER_POINT;
@@ -90,28 +94,28 @@ module.exports.updatePopulation = (db, { username, updateDate }) => {
     });
 };
 
-module.exports.updatePoints = (db, { username, updateDate }) => {
-  assert(typeof username === "string", "`username` is a string");
+module.exports.updatePoints = (db, { id, updateDate }) => {
+  assert(typeof id === "string", "`id` is a string");
   assert(updateDate instanceof Date, "`updateDate` should be a date");
   const col = db.collection(USER_COLLECTION);
   return col
-    .findOne({ username })
-    .then(({ points, lastRetrievePoints, _id }) => {
-      const msDiff = updateDate.valueOf() - lastRetrievePoints.valueOf();
-      const pointsDelta = withRandomOffset(RETRIEVAL_POINTS_PER_MS * msDiff);
+    .findOne({ _id: ObjectId(id) })
+    .then(({ points, lastUpdatePointsDate, _id }) => {
+      const msDiff = updateDate.valueOf() - lastUpdatePointsDate.valueOf();
+      const pointsDelta = withRandomOffset(POINTS_PER_MS * msDiff);
       return col.findOneAndUpdate(
         { _id },
         {
           $set: {
             points: points + pointsDelta,
-            lastRetrievePoints: updateDate
+            lastUpdatePointsDate: updateDate
           }
         },
         {
           returnOriginal: false,
           projection: {
             points: true,
-            lastRetrievePoints: true
+            lastUpdatePointsDate: true
           }
         }
       );

@@ -1,14 +1,18 @@
-import { useEffect, useReducer, points, useState } from "react";
+import { useEffect, useReducer } from "react";
 import throttle from "lodash.throttle";
+import dynamic from "next/dynamic";
 
 import {
-  RETRIEVAL_POINTS_PER_MS,
-  RETRIEVAL_TIMEOUT,
+  POINTS_PER_MS,
+  POINTS_UPDATE_TIMEOUT,
   POPULATION_GROWTH_TIMEOUT
 } from "../constants.js";
 import { createSlice, update, formatInt, plural } from "./util.js";
-import Page from "./page.js";
 import Industries from "./industries.js";
+
+const GetPointsButton = dynamic(() => import("./get-points-button.js"), {
+  ssr: false // relies on time, which is inconsistent between client and server
+});
 
 const fetchUpdatePopulation = updateDate =>
   fetch("/api/user/update-population", {
@@ -19,72 +23,38 @@ const fetchUpdatePopulation = updateDate =>
     body: JSON.stringify({ updateDate })
   });
 
-const calculateEstimate = lastRetrievePoints => {
-  const now = Date.now();
-  const diffMs = now - lastRetrievePoints.valueOf();
-  return RETRIEVAL_POINTS_PER_MS * diffMs;
-};
-
-const GetPointsButton = ({ lastRetrievePoints, onClick }) => {
-  const [estimate, setEstimate] = useState(
-    calculateEstimate(lastRetrievePoints)
-  );
-
-  useEffect(() => {
-    const timeout = setInterval(() => {
-      setEstimate(calculateEstimate(lastRetrievePoints));
-    }, 1e3);
-    return () => {
-      clearInterval(timeout);
-    };
-  }, []);
-
-  return (
-    <button onClick={onClick}>
-      Get ~{formatInt(estimate)} more {plural(estimate, "point", "points")}!
-    </button>
-  );
-};
-
 const slice = createSlice({
   name: "state",
   reducerMap: {
-    setCanRetrievePoints(state, { payload: bool }) {
-      return update(state, "canRetrievePoints", bool);
-    },
     updatePopulation(
       state,
       {
         payload: { population, lastPopulationChangeDate }
       }
     ) {
-      return update(state, ["user"], user => ({
-        ...user,
+      return {
+        ...state,
         population,
         lastPopulationChangeDate: new Date(lastPopulationChangeDate)
-      }));
+      };
     },
     updatePointsRetrieve(
       state,
       {
-        payload: { points, lastRetrievePoints }
+        payload: { points, lastUpdatePointsDate }
       }
     ) {
-      return update(state, "user", user => ({
-        ...user,
+      return {
+        ...state,
         points,
-        lastRetrievePoints: new Date(lastRetrievePoints)
-      }));
+        lastUpdatePointsDate: new Date(lastUpdatePointsDate)
+      };
     }
   }
 });
 
-// TODO(?) rename `lastRetrievePoints` to `lastRetrievePointsDate`
-export default function Main({ userInformation }) {
-  const [state, dispatch] = useReducer(slice.reducer, {
-    user: userInformation,
-    canRetrievePoints: null
-  });
+export default function Main({ userInformation, industriesInformation }) {
+  const [state, dispatch] = useReducer(slice.reducer, userInformation);
 
   useEffect(() => {
     const handleUpdate = updateDate =>
@@ -94,7 +64,7 @@ export default function Main({ userInformation }) {
         .then(dispatch);
     const now = new Date();
     const secondsDiff =
-      now.valueOf() - state.user.lastPopulationChangeDate.valueOf();
+      now.valueOf() - state.lastPopulationChangeDate.valueOf();
     if (secondsDiff > POPULATION_GROWTH_TIMEOUT) handleUpdate(now);
     const interval = setInterval(
       () => handleUpdate(new Date()),
@@ -105,20 +75,8 @@ export default function Main({ userInformation }) {
     };
   }, []);
 
-  useEffect(() => {
-    const now = Date.now();
-    const diff = now - state.user.lastRetrievePoints.valueOf();
-    const timeout = setTimeout(() => {
-      dispatch(slice.actions.setCanRetrievePoints(true));
-    }, Math.min(RETRIEVAL_TIMEOUT, Math.max(RETRIEVAL_TIMEOUT - diff, 0)));
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [state.user.lastRetrievePoints]);
-
   const handleRetrievePoints = () => {
-    dispatch(slice.actions.setCanRetrievePoints(false));
-    fetch("/api/user/retrieve-points", {
+    fetch("/api/user/update-points", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -131,22 +89,27 @@ export default function Main({ userInformation }) {
   };
 
   return (
-    <Page>
-      <div>
+    <>
+      <section>
         <h3>Player</h3>
-        <p>Hello, {state.user.username}</p>
+        <p>Hello, {state.username}</p>
         <p>
           Your planet contains a lively population of{" "}
-          {formatInt(state.user.population)} aliens!
+          {formatInt(state.population)} aliens!
         </p>
-        <p>
-          You got {formatInt(state.user.points)} points
-          {state.canRetrievePoints && (
-            <GetPointsButton {...state.user} onClick={handleRetrievePoints} />
-          )}
-        </p>
-        <Industries user={state.user} />
-      </div>
-    </Page>
+        <p>You got {formatInt(state.points)} points</p>
+        <ul>
+          <li>
+            <GetPointsButton {...state} onClick={handleRetrievePoints} />
+          </li>
+        </ul>
+      </section>
+      <section>
+        <Industries
+          industriesInformation={industriesInformation}
+          user={state}
+        />
+      </section>
+    </>
   );
 }

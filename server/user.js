@@ -6,27 +6,24 @@ const {
   updatePoints,
   updatePopulation
 } = require("./api/user.js");
+const { authenticationMiddleware } = require("./util.js");
+
+// TODO Do these need `catch`s?
 
 module.exports = createUserRouter = db => {
   const router = express.Router();
 
-  router.use((req, res, next) => {
-    if (!req.session.authenticated) {
-      return res.status(403).send();
-    }
-    next();
-  });
+  router.use(authenticationMiddleware);
 
   router.get("/user-information", (req, res) => {
-    userInformation(db, { username: req.session.username }).then(
-      res.json.bind(res)
-    );
-    // TODO .catch ?
+    userInformation(db, { id: req.session.userId }).then(result => {
+      res.json(result);
+    });
   });
 
-  router.post("/retrieve-points", (req, res) =>
+  router.post("/update-points", (req, res) =>
     updatePoints(db, {
-      username: req.session.username,
+      id: req.session.userId,
       updateDate: new Date(req.body.updateDate)
     }).then(result => {
       assert(result.ok, "`result` should be okay?");
@@ -36,7 +33,7 @@ module.exports = createUserRouter = db => {
 
   router.post("/update-population", (req, res) => {
     updatePopulation(db, {
-      username: req.session.username,
+      id: req.session.userId,
       updateDate: new Date(req.body.updateDate)
     }).then(result => {
       assert(result.ok, "`result` should be okay?");
