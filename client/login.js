@@ -1,7 +1,7 @@
 import fetch from "isomorphic-unfetch";
 import { useReducer } from "react";
 import Link from "next/link";
-import { createSlice, update, domainPath } from "./util.js";
+import { createSlice, update } from "./util.js";
 
 const LOGIN_DEFAULT = {
   username: "",

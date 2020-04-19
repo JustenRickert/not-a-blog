@@ -21,7 +21,7 @@ const first = xs => xs[0];
 
 const rest = xs => xs.slice(1);
 
-const complement = p => (...args) => !p(...args);
+// const complement = p => (...args) => !p(...args);
 
 export const createSlice = ({ name, reducerMap, initialState }) => {
   const actions = Object.keys(reducerMap).reduce(

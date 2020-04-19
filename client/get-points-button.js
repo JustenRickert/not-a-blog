@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
 
-import {
-  POINTS_PER_MS,
-  POINTS_UPDATE_TIMEOUT,
-  POPULATION_GROWTH_TIMEOUT
-} from "../constants.js";
-import { createSlice, update, formatInt, plural } from "./util.js";
+import { POINTS_PER_MS, POINTS_UPDATE_TIMEOUT } from "../constants.js";
+import { formatInt, plural } from "./util.js";
 
 const calculateEstimate = lastUpdatePointsDate => {
   const now = Date.now();

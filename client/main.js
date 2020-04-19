@@ -1,13 +1,8 @@
 import { useEffect, useReducer } from "react";
-import throttle from "lodash.throttle";
 import dynamic from "next/dynamic";
 
-import {
-  POINTS_PER_MS,
-  POINTS_UPDATE_TIMEOUT,
-  POPULATION_GROWTH_TIMEOUT
-} from "../constants.js";
-import { createSlice, update, formatInt, plural } from "./util.js";
+import { POPULATION_GROWTH_TIMEOUT } from "../constants.js";
+import { createSlice, formatInt } from "./util.js";
 import Industries from "./industries.js";
 
 const GetPointsButton = dynamic(() => import("./get-points-button.js"), {
