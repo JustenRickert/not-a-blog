@@ -6,7 +6,7 @@
     "db": "mkdir -p data/db; mongod --dbpath data/db",
     "dev": "nodemon index.js",
     "build": "next build",
-    "start": "next start",
+    "loc": "wc -l {client,server,pages}/**/*.js index.js constants.js",
     "lint": "eslint pages server client --fix"
   },
   "dependencies": {
