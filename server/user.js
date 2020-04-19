@@ -1,7 +1,11 @@
 const assert = require("assert");
 const express = require("express");
 
-const { userInformation, updatePoints } = require("./api/user.js");
+const {
+  userInformation,
+  updatePoints,
+  updatePopulation
+} = require("./api/user.js");
 
 module.exports = createUserRouter = db => {
   const router = express.Router();
@@ -29,6 +33,16 @@ module.exports = createUserRouter = db => {
       res.json(result.value);
     })
   );
+
+  router.post("/update-population", (req, res) => {
+    updatePopulation(db, {
+      username: req.session.username,
+      updateDate: new Date(req.body.updateDate)
+    }).then(result => {
+      assert(result.ok, "`result` should be okay?");
+      res.json(result.value);
+    });
+  });
 
   return router;
 };

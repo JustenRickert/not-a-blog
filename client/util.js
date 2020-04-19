@@ -39,7 +39,7 @@ export const update = (state, key, fnOrState) => {
   };
 };
 
-export const formatPoints = points => Math.floor(points).toLocaleString();
+export const formatInt = points => Math.floor(points).toLocaleString();
 
 export const plural = (n, single, plural) => {
   if (n === 1) return single;

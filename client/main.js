@@ -1,8 +1,23 @@
 import { useEffect, useReducer, points, useState } from "react";
+import throttle from "lodash.throttle";
 
-import { RETRIEVAL_POINTS_PER_MS, RETRIEVAL_TIMEOUT } from "../constants.js";
-import { createSlice, update, formatPoints, plural } from "./util.js";
+import {
+  RETRIEVAL_POINTS_PER_MS,
+  RETRIEVAL_TIMEOUT,
+  POPULATION_GROWTH_TIMEOUT
+} from "../constants.js";
+import { createSlice, update, formatInt, plural } from "./util.js";
 import Page from "./page.js";
+import Industries from "./industries.js";
+
+const fetchUpdatePopulation = updateDate =>
+  fetch("/api/user/update-population", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ updateDate })
+  });
 
 const calculateEstimate = lastRetrievePoints => {
   const now = Date.now();
@@ -26,7 +41,7 @@ const GetPointsButton = ({ lastRetrievePoints, onClick }) => {
 
   return (
     <button onClick={onClick}>
-      Get ~{formatPoints(estimate)} more {plural(estimate, "point", "points")}!
+      Get ~{formatInt(estimate)} more {plural(estimate, "point", "points")}!
     </button>
   );
 };
@@ -36,6 +51,18 @@ const slice = createSlice({
   reducerMap: {
     setCanRetrievePoints(state, { payload: bool }) {
       return update(state, "canRetrievePoints", bool);
+    },
+    updatePopulation(
+      state,
+      {
+        payload: { population, lastPopulationChangeDate }
+      }
+    ) {
+      return update(state, ["user"], user => ({
+        ...user,
+        population,
+        lastPopulationChangeDate: new Date(lastPopulationChangeDate)
+      }));
     },
     updatePointsRetrieve(
       state,
@@ -55,12 +82,28 @@ const slice = createSlice({
 // TODO(?) rename `lastRetrievePoints` to `lastRetrievePointsDate`
 export default function Main({ userInformation }) {
   const [state, dispatch] = useReducer(slice.reducer, {
-    user: {
-      ...userInformation,
-      lastRetrievePoints: new Date(userInformation.lastRetrievePoints)
-    },
+    user: userInformation,
     canRetrievePoints: null
   });
+
+  useEffect(() => {
+    const handleUpdate = updateDate =>
+      fetchUpdatePopulation(updateDate)
+        .then(res => res.json())
+        .then(slice.actions.updatePopulation)
+        .then(dispatch);
+    const now = new Date();
+    const secondsDiff =
+      now.valueOf() - state.user.lastPopulationChangeDate.valueOf();
+    if (secondsDiff > POPULATION_GROWTH_TIMEOUT) handleUpdate(now);
+    const interval = setInterval(
+      () => handleUpdate(new Date()),
+      POPULATION_GROWTH_TIMEOUT
+    );
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     const now = Date.now();
@@ -89,13 +132,21 @@ export default function Main({ userInformation }) {
 
   return (
     <Page>
-      <p>Hello, {state.user.username}</p>
-      <p>
-        You got {formatPoints(state.user.points)} points
-        {state.canRetrievePoints && (
-          <GetPointsButton {...state.user} onClick={handleRetrievePoints} />
-        )}
-      </p>
+      <div>
+        <h3>Player</h3>
+        <p>Hello, {state.user.username}</p>
+        <p>
+          Your planet contains a lively population of{" "}
+          {formatInt(state.user.population)} aliens!
+        </p>
+        <p>
+          You got {formatInt(state.user.points)} points
+          {state.canRetrievePoints && (
+            <GetPointsButton {...state.user} onClick={handleRetrievePoints} />
+          )}
+        </p>
+        <Industries user={state.user} />
+      </div>
     </Page>
   );
 }
