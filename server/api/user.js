@@ -48,7 +48,7 @@ module.exports.userInformation = (db, { id }) => {
   console.log("WHAT", id);
   return db
     .collection(USER_COLLECTION)
-    .findOne({ _id: ObjectId(id) })
+    .findOne({ _id: ObjectId(id) }, { projection: { _id: false } })
     .then(({ password: _password, ...rest }) => rest);
 };
 
@@ -64,15 +64,17 @@ module.exports.updatePopulation = (db, { id, updateDate }) => {
       const secondsDiff =
         (updateDate.valueOf() - lastPopulationChangeDate.valueOf()) / 1000;
       const secondsRemainder = secondsDiff % POPULATION_GROWTH_SECONDS;
-      const newPopulation = range(
-        Math.floor(secondsDiff / POPULATION_GROWTH_SECONDS)
-      ).reduce(
-        newPopulation =>
-          newPopulation +
-          POPULATION_GROWTH_PERCENTAGE *
-            newPopulation *
-            (1 - newPopulation / capacity),
-        population
+      const newPopulation = Math.floor(
+        range(Math.floor(secondsDiff / POPULATION_GROWTH_SECONDS)).reduce(
+          newPopulation =>
+            newPopulation +
+            withRandomOffset(
+              POPULATION_GROWTH_PERCENTAGE *
+                newPopulation *
+                (1 - newPopulation / capacity)
+            ),
+          population
+        )
       );
       updateDate.setSeconds(updateDate.getSeconds() + secondsRemainder);
       return col.findOneAndUpdate(
@@ -86,6 +88,7 @@ module.exports.updatePopulation = (db, { id, updateDate }) => {
         {
           returnOriginal: false,
           projection: {
+            _id: false,
             population: true,
             lastPopulationChangeDate: true
           }
@@ -114,6 +117,7 @@ module.exports.updatePoints = (db, { id, updateDate }) => {
         {
           returnOriginal: false,
           projection: {
+            _id: false,
             points: true,
             lastUpdatePointsDate: true
           }

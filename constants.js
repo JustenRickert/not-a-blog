@@ -18,5 +18,17 @@ module.exports.INDUSTRIES_STUB = {
   }
 };
 
-module.exports.INDUSTRIES_PRODUCTION_BAKING = 1;
-module.exports.INDUSTRIES_PRODUCTION_HAND_TOOL = 1 / 10;
+module.exports.INDUSTRIES_EMPLOYMENT_TIMEOUT = {
+  baking: 3e3,
+  handTool: 5e3
+};
+
+module.exports.INDUSTRIES_EMPLOYMENT_GROWTH_PERCENTAGE = {
+  baking: 0.01,
+  handTool: 0.005
+};
+
+module.exports.INDUSTRIES_PRODUCTION = {
+  baking: 1,
+  handTool: 1 / 10
+};

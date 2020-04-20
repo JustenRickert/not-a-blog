@@ -37,8 +37,9 @@ export default function GetPointsButton({ lastUpdatePointsDate, onClick }) {
 
   const handleClick = () => {
     setCanRetrievePoints(false);
-    setEstimate(0);
-    onClick();
+    onClick().then(() => {
+      setEstimate(0);
+    });
   };
 
   return (

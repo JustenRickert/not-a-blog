@@ -1,3 +1,13 @@
+module.exports = {
+  ...module.exports,
+  ...require("../util.js")
+};
+
+module.exports.withRandomMinusOffset = (n, offsetPercentage = 0.25) => {
+  const offset = offsetPercentage * Math.random() * n;
+  return n - offset;
+};
+
 module.exports.withRandomOffset = (n, offsetPercentage = 0.1) => {
   const r = 2 * (Math.random() - 1 / 2); // [-1, 1)
   return n * (1 + offsetPercentage * r);

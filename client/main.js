@@ -70,7 +70,7 @@ export default function Main({ userInformation, industriesInformation }) {
     };
   }, []);
 
-  const handleRetrievePoints = () => {
+  const handleRetrievePoints = () =>
     fetch("/api/user/update-points", {
       method: "POST",
       headers: {
@@ -81,10 +81,9 @@ export default function Main({ userInformation, industriesInformation }) {
       .then(res => res.json())
       .then(slice.actions.updatePointsRetrieve)
       .then(dispatch);
-  };
 
   return (
-    <>
+    <div>
       <section>
         <h3>Player</h3>
         <p>Hello, {state.username}</p>
@@ -105,6 +104,6 @@ export default function Main({ userInformation, industriesInformation }) {
           user={state}
         />
       </section>
-    </>
+    </div>
   );
 }

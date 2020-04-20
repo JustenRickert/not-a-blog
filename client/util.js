@@ -1,21 +1,11 @@
 import path from "isomorphic-path";
 
+export { difference, omit } from "../util.js";
+
 export const domainPath = (req, urlPath) => {
   if (!req) return urlPath;
   return [req.protocol, "://", path.join(req.get("host"), urlPath)].join("");
 };
-
-const difference = (as, bs, toKey = x => x) =>
-  as.filter(a => bs.some(b => toKey(a) !== toKey(b)));
-
-export const omit = (o, keys) =>
-  difference(Object.keys(o), keys).reduce(
-    (acc, key) => ({
-      ...acc,
-      [key]: o[key]
-    }),
-    {}
-  );
 
 const first = xs => xs[0];
 
@@ -56,4 +46,17 @@ export const formatInt = points => Math.floor(points).toLocaleString();
 export const plural = (n, single, plural) => {
   if (n === 1) return single;
   else return plural;
+};
+
+export const serializeIndustryDateInformation = ({
+  lastEmploymentUpdateDate,
+  ...industry
+}) => ({
+  ...industry,
+  lastEmploymentUpdateDate: new Date(lastEmploymentUpdateDate)
+});
+
+export const shallowEqualOmitting = (...keys) => (previous, next) => {
+  previous = omit(previous, keys);
+  return Object.entries(previous).some(([key, p]) => p === next[key]);
 };

@@ -2,7 +2,12 @@ import fetch from "isomorphic-unfetch";
 import { useReducer } from "react";
 import dynamic from "next/dynamic";
 
-import { createSlice, update, domainPath } from "../client/util.js";
+import {
+  createSlice,
+  domainPath,
+  serializeIndustryDateInformation,
+  update
+} from "../client/util.js";
 import Page from "../client/page.js";
 import Login from "../client/login.js";
 
@@ -18,7 +23,7 @@ const fetchIndustriesInformation = req =>
     headers: req && req.headers
   });
 
-const serializeDateInformation = ({
+const serializeUserDateInformation = ({
   createdDate,
   lastUpdatePointsDate,
   lastPopulationChangeDate,
@@ -30,6 +35,15 @@ const serializeDateInformation = ({
   lastPopulationChangeDate: new Date(lastPopulationChangeDate)
 });
 
+const serializeIndustriesDateInformation = industriesInformation =>
+  Object.entries(industriesInformation).reduce(
+    (acc, [name, industry]) => ({
+      ...acc,
+      [name]: serializeIndustryDateInformation(industry)
+    }),
+    {}
+  );
+
 const slice = createSlice({
   name: "state",
   reducerMap: {
@@ -37,7 +51,7 @@ const slice = createSlice({
       return update(
         state,
         "userInformation",
-        serializeDateInformation(userInformation)
+        serializeUserDateInformation(userInformation)
       );
     }
   }
@@ -56,8 +70,7 @@ Home.getInitialProps = ({ req }) => {
     return Promise.all(responses.map(res => res.json())).then(
       ([userInformation, industriesInformation]) => ({
         userInformation,
-        industriesInformation: (console.log(industriesInformation),
-        industriesInformation)
+        industriesInformation: industriesInformation
       })
     );
   });
@@ -66,8 +79,10 @@ Home.getInitialProps = ({ req }) => {
 export default function Home({ userInformation, industriesInformation }) {
   const [state, dispatch] = useReducer(slice.reducer, {
     userInformation:
-      userInformation && serializeDateInformation(userInformation),
-    industriesInformation
+      userInformation && serializeUserDateInformation(userInformation),
+    industriesInformation:
+      industriesInformation &&
+      serializeIndustriesDateInformation(industriesInformation)
   });
   const handleUserInformationChange = () =>
     fetchUserInformation()
