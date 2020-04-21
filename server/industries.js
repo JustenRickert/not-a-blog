@@ -4,7 +4,8 @@ const express = require("express");
 const { authenticationMiddleware } = require("./util.js");
 const {
   industriesInformation,
-  employIndustry
+  employIndustry,
+  updateSupply
 } = require("./api/industries.js");
 
 module.exports = createIndustriesRoute = db => {
@@ -31,6 +32,14 @@ module.exports = createIndustriesRoute = db => {
     }).then(result => {
       res.json(result);
     });
+  });
+
+  router.post("/update-supply", (req, res) => {
+    updateSupply(db, {
+      id: req.session.userId,
+      updateDate: new Date(req.body.updateDate),
+      industryName: req.body.industryName
+    }).then(result => res.json(result));
   });
 
   return router;

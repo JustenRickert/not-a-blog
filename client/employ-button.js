@@ -10,11 +10,9 @@ function EmployButton({
 }) {
   const [canEmploy, setCanEmploy] = useState(false);
 
-  console.log(industryName);
-
   useEffect(() => {
     const now = Date.now();
-    const diff = now - lastEmploymentUpdateDate.valueOf();
+    const diff = now - lastEmploymentUpdateDate.getTime();
     const employmentTimeout = INDUSTRIES_EMPLOYMENT_TIMEOUT[industryName];
     const timeout = setTimeout(() => {
       setCanEmploy(true);

@@ -5,7 +5,7 @@ import { formatInt, plural } from "./util.js";
 
 const calculateEstimate = lastUpdatePointsDate => {
   const now = Date.now();
-  const diffMs = now - lastUpdatePointsDate.valueOf();
+  const diffMs = now - lastUpdatePointsDate.getTime();
   return POINTS_PER_MS * diffMs;
 };
 
@@ -17,7 +17,7 @@ export default function GetPointsButton({ lastUpdatePointsDate, onClick }) {
 
   useEffect(() => {
     const now = Date.now();
-    const diff = now - lastUpdatePointsDate.valueOf();
+    const diff = now - lastUpdatePointsDate.getTime();
     const timeout = setTimeout(() => {
       setCanRetrievePoints(true);
     }, Math.min(POINTS_UPDATE_TIMEOUT, Math.max(POINTS_UPDATE_TIMEOUT - diff, 0)));

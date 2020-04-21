@@ -63,20 +63,12 @@ module.exports.updatePopulation = (db, { id, updateDate }) => {
         POPULATION_CAPACITY_INITIAL + points * POPULATION_CAPACITY_PER_POINT;
       const secondsDiff =
         (updateDate.valueOf() - lastPopulationChangeDate.valueOf()) / 1000;
-      const secondsRemainder = secondsDiff % POPULATION_GROWTH_SECONDS;
-      const newPopulation = Math.floor(
-        range(Math.floor(secondsDiff / POPULATION_GROWTH_SECONDS)).reduce(
-          newPopulation =>
-            newPopulation +
-            withRandomOffset(
-              POPULATION_GROWTH_PERCENTAGE *
-                newPopulation *
-                (1 - newPopulation / capacity)
-            ),
-          population
-        )
-      );
-      updateDate.setSeconds(updateDate.getSeconds() + secondsRemainder);
+      // :shaka: https://en.wikipedia.org/wiki/Logistic_function#In_ecology:_modeling_population_growth
+      const newPopulation =
+        capacity /
+        (1 +
+          ((capacity - population) / population) *
+            Math.E ** (-POPULATION_GROWTH_PERCENTAGE * secondsDiff));
       return col.findOneAndUpdate(
         { _id },
         {

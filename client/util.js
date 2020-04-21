@@ -1,6 +1,9 @@
+import { useEffect, useRef } from "react";
 import path from "isomorphic-path";
 
-export { difference, omit } from "../util.js";
+import { omit, withRandomOffset } from "../util.js";
+
+export * from "../util.js";
 
 export const domainPath = (req, urlPath) => {
   if (!req) return urlPath;
@@ -49,14 +52,34 @@ export const plural = (n, single, plural) => {
 };
 
 export const serializeIndustryDateInformation = ({
+  lastUpdateSupplyDate,
   lastEmploymentUpdateDate,
   ...industry
 }) => ({
   ...industry,
+  lastUpdateSupplyDate: new Date(lastUpdateSupplyDate),
   lastEmploymentUpdateDate: new Date(lastEmploymentUpdateDate)
 });
 
 export const shallowEqualOmitting = (...keys) => (previous, next) => {
   previous = omit(previous, keys);
   return Object.entries(previous).some(([key, p]) => p === next[key]);
+};
+
+export const useDeviationInterval = (
+  callback,
+  lastUpdateDate,
+  ms,
+  offsetPercentage = 0.1
+) => {
+  useEffect(() => {
+    const sinceLast = Date.now() - lastUpdateDate.getTime();
+    const timeout = setTimeout(
+      callback,
+      withRandomOffset(Math.max(0, ms - sinceLast), offsetPercentage)
+    );
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [callback, lastUpdateDate]);
 };

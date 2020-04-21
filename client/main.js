@@ -59,7 +59,7 @@ export default function Main({ userInformation, industriesInformation }) {
         .then(dispatch);
     const now = new Date();
     const secondsDiff =
-      now.valueOf() - state.lastPopulationChangeDate.valueOf();
+      now.valueOf() - state.lastPopulationChangeDate.getTime();
     if (secondsDiff > POPULATION_GROWTH_TIMEOUT) handleUpdate(now);
     const interval = setInterval(
       () => handleUpdate(new Date()),

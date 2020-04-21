@@ -4,9 +4,12 @@ const { ObjectId } = require("mongodb");
 const { INDUSTRIES_COLLECTION, USER_COLLECTION } = require("./constants.js");
 const {
   INDUSTRIES_STUB,
-  INDUSTRIES_EMPLOYMENT_GROWTH_PERCENTAGE
+  INDUSTRIES_EMPLOYMENT_GROWTH_PERCENTAGE,
+  INDUSTRIES_UPDATE_SUPPLY_RATE
 } = require("../../constants.js");
-const { withRandomMinusOffset } = require("../util.js");
+const { range, withRandomMinusOffset } = require("../util.js");
+
+const industryNames = Object.keys(INDUSTRIES_STUB);
 
 module.exports.industriesInformation = (db, { id }) => {
   assert(typeof id === "string", "`id` is a string");
@@ -23,7 +26,8 @@ module.exports.industriesInformation = (db, { id }) => {
                 ...acc,
                 [key]: {
                   ...value,
-                  lastEmploymentUpdateDate: new Date()
+                  lastEmploymentUpdateDate: new Date(),
+                  lastUpdateSupplyDate: new Date()
                 }
               }),
               {}
@@ -42,6 +46,10 @@ module.exports.employIndustry = async (
 ) => {
   assert(typeof id === "string", "`id` is be a string");
   assert(updateDate instanceof Date, "`updateDate` is be a Date");
+  assert(
+    industryNames.includes(industryName),
+    "`industryName` should be one of the available industries"
+  );
   const [population, industries] = await Promise.all([
     db
       .collection(USER_COLLECTION)
@@ -84,4 +92,49 @@ module.exports.employIndustry = async (
       }
     )
     .then(result => result.value[industryName]);
+};
+
+module.exports.updateSupply = (db, { id, updateDate, industryName }) => {
+  assert(typeof id === "string", "`id` should a string");
+  assert(updateDate instanceof Date, "`updateDate` should be a Date");
+  assert(
+    industryNames.includes(industryName),
+    "`industryName` should be one of the available industries"
+  );
+  const col = db.collection(INDUSTRIES_COLLECTION);
+  return col
+    .findOne({ _id: ObjectId(id) })
+    .then(
+      ({
+        _id,
+        [industryName]: { supply, allocation, lastUpdateSupplyDate }
+      }) => {
+        const rate = INDUSTRIES_UPDATE_SUPPLY_RATE[industryName];
+        const secondsDiff =
+          (updateDate.getTime() - lastUpdateSupplyDate.getTime()) / 1000;
+        const delta = allocation * rate * secondsDiff;
+        return col
+          .findOneAndUpdate(
+            {
+              _id
+            },
+            {
+              $set: {
+                [[industryName, "lastUpdateSupplyDate"].join(".")]: updateDate
+              },
+              $inc: {
+                [[industryName, "supply"].join(".")]: delta
+              }
+            },
+            {
+              returnOriginal: false,
+              projection: {
+                _id: false,
+                [industryName]: true
+              }
+            }
+          )
+          .then(result => result.value[industryName]);
+      }
+    );
 };
