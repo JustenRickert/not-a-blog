@@ -30,7 +30,7 @@ export default function createIndustriesRoute(db) {
       updateDate: new Date(req.body.updateDate),
       industryName: req.body.industryName
     }).then(result => {
-      res.json(result);
+      res.json(result.value[req.body.industryName]);
     });
   });
 
@@ -39,7 +39,12 @@ export default function createIndustriesRoute(db) {
       id: req.session.userId,
       updateDate: new Date(req.body.updateDate),
       industryName: req.body.industryName
-    }).then(result => res.json(result));
+    })
+      .then(result => res.json(result.value))
+      .catch(e => {
+        console.error(e);
+        res.status(500).send();
+      });
   });
 
   return router;

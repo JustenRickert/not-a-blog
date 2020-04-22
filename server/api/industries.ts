@@ -8,7 +8,7 @@ import {
   INDUSTRIES_UPDATE_SUPPLY_RATE
 } from "../../constants";
 import { keys, withRandomMinusOffset } from "../util";
-import { IndustryNames } from "../../types";
+import { IndustryName, Industry, Industries } from "../../types";
 
 const industryNames = keys(INDUSTRIES_STUB);
 
@@ -34,7 +34,7 @@ export function industriesInformation(db, { id }: { id: string }) {
             )
           })
           .then(result => result.ops[0])
-          // `insertOne` doesn't take `projection`? what a fucking joke db
+          // `insertOne` doesn't take `projection`? T_T
           .then(({ _id, ...results }) => results);
       return result;
     });
@@ -49,7 +49,7 @@ export async function employIndustry(
   }: {
     id: string;
     updateDate: Date;
-    industryName: IndustryNames;
+    industryName: IndustryName;
   }
 ) {
   const [population, industries] = await Promise.all([
@@ -71,29 +71,26 @@ export async function employIndustry(
       INDUSTRIES_EMPLOYMENT_GROWTH_PERCENTAGE[industryName] * totalUnallocated
     )
   );
-  return db
-    .collection(INDUSTRIES_COLLECTION)
-    .findOneAndUpdate(
-      {
-        _id: ObjectId(id)
+  return db.collection(INDUSTRIES_COLLECTION).findOneAndUpdate(
+    {
+      _id: ObjectId(id)
+    },
+    {
+      $set: {
+        [[industryName, "lastEmploymentUpdateDate"].join(".")]: updateDate
       },
-      {
-        $set: {
-          [[industryName, "lastEmploymentUpdateDate"].join(".")]: updateDate
-        },
-        $inc: {
-          [[industryName, "allocation"].join(".")]: newlyEmployed
-        }
-      },
-      {
-        returnOriginal: false,
-        projection: {
-          _id: false,
-          [industryName]: true
-        }
+      $inc: {
+        [[industryName, "allocation"].join(".")]: newlyEmployed
       }
-    )
-    .then(result => result.value[industryName]);
+    },
+    {
+      returnOriginal: false,
+      projection: {
+        _id: false,
+        [industryName]: true
+      }
+    }
+  );
 }
 
 export function updateSupply(
@@ -105,7 +102,7 @@ export function updateSupply(
   }: {
     id: string;
     updateDate: Date;
-    industryName: IndustryNames;
+    industryName: IndustryName;
   }
 ) {
   const col = db.collection(INDUSTRIES_COLLECTION);
@@ -122,52 +119,76 @@ export function updateSupply(
           (updateDate.getTime() - lastUpdateSupplyDate.getTime()) / 1000;
         if (typeof rate === "number") {
           const delta = allocation * rate * secondsDiff;
-          console.log("UPDATE", {
-            industryName,
-            delta,
-            allocation,
-            rate,
-            secondsDiff
-          });
-          return col
-            .findOneAndUpdate(
-              {
-                _id
+          return col.findOneAndUpdate(
+            {
+              _id
+            },
+            {
+              $set: {
+                [[industryName, "lastUpdateSupplyDate"].join(".")]: updateDate
               },
-              {
-                $set: {
-                  [[industryName, "lastUpdateSupplyDate"].join(".")]: updateDate
-                },
-                $inc: {
-                  [[industryName, "supply"].join(".")]: delta
-                }
-              },
-              {
-                returnOriginal: false,
-                projection: {
-                  _id: false,
-                  [industryName]: true
-                }
+              $inc: {
+                [[industryName, "supply"].join(".")]: delta
               }
-            )
-            .then(result => result.value);
-        } else {
-          // TODO
-          const { value, ...productCosts } = rate;
-          const maxDelta = allocation * value * secondsDiff;
-          const subtractions = Object.entries(productCosts).reduce(
-            (subtractions, [otherIndustryName, cost]) => ({
-              ...subtractions,
-              [otherIndustryName]: cost * maxDelta
-            }),
-            {} as Record<IndustryNames, number>
+            },
+            {
+              returnOriginal: false,
+              projection: {
+                _id: false,
+                [industryName]: true
+              }
+            }
           );
-          console.log("Requirements necessary", {
-            value,
-            productCosts,
-            maxDelta,
-            subtractions
-          });
+        } else {
+          const { unit, ...productCosts } = rate;
+          const maxDelta = allocation * unit * secondsDiff;
+          const maxSubtractions = Object.entries(productCosts).reduce(
+            (subtractions, [otherIndustryName, costPerUnit]) => ({
+              ...subtractions,
+              [otherIndustryName]: maxDelta / costPerUnit
+            }),
+            {} as Record<IndustryName, number>
+          );
+          const deltaRatio = Object.entries(maxSubtractions).reduce(
+            (deltaRatio, [otherIndustryName, supplySubtraction]) => {
+              const otherIndustry = industries[otherIndustryName];
+              const possibleSubtraction = Math.min(
+                supplySubtraction,
+                otherIndustry.supply
+              );
+              return Math.min(
+                deltaRatio,
+                otherIndustry.supply / supplySubtraction
+              );
+            },
+            1
+          );
+          return col.findOneAndUpdate(
+            {
+              _id
+            },
+            {
+              $set: {
+                [[industryName, "lastUpdateSupplyDate"].join(".")]: updateDate
+              },
+              $inc: Object.entries(maxSubtractions).reduce(
+                (subtractions, [otherIndustryName, maxSubtraction]) => ({
+                  ...subtractions,
+                  [[otherIndustryName, "supply"].join(".")]:
+                    -deltaRatio * maxSubtraction
+                }),
+                {
+                  [[industryName, "supply"].join(".")]: deltaRatio * maxDelta
+                }
+              )
+            },
+            {
+              returnOriginal: false,
+              projection: {
+                _id: false
+              }
+            }
+          ) as Promise<Industries>;
         }
       }
     );

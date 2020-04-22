@@ -44,7 +44,6 @@ export function newUser(db, { username, password }) {
 
 export function userInformation(db, { id }) {
   assert(typeof id === "string", "`id` is a string");
-  console.log("WHAT", id);
   return db
     .collection(USER_COLLECTION)
     .findOne({ _id: ObjectId(id) }, { projection: { _id: false } })

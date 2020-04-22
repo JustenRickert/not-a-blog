@@ -51,7 +51,7 @@ export const INDUSTRIES_EMPLOYMENT_GROWTH_PERCENTAGE = {
 export const INDUSTRIES_UPDATE_SUPPLY_RATE = {
   agriculture: 0.1,
   baking: {
-    value: 0.1,
+    unit: 0.1,
     agriculture: 3
   }
   // handTool: {

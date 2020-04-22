@@ -88,6 +88,7 @@ export default function Industries({
           industryName
         })
           .then(res => res.json())
+          .then(result => (console.log(result), result))
           .then(
             industries => slice.actions.updateIndustries(industries),
             // Sometimes we're not very good at programming, and we don't want
