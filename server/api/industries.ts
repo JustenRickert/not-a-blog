@@ -122,6 +122,13 @@ export function updateSupply(
           (updateDate.getTime() - lastUpdateSupplyDate.getTime()) / 1000;
         if (typeof rate === "number") {
           const delta = allocation * rate * secondsDiff;
+          console.log("UPDATE", {
+            industryName,
+            delta,
+            allocation,
+            rate,
+            secondsDiff
+          });
           return col
             .findOneAndUpdate(
               {
@@ -145,6 +152,7 @@ export function updateSupply(
             )
             .then(result => result.value);
         } else {
+          // TODO
           const { value, ...productCosts } = rate;
           const maxDelta = allocation * value * secondsDiff;
           const subtractions = Object.entries(productCosts).reduce(
@@ -154,7 +162,12 @@ export function updateSupply(
             }),
             {} as Record<IndustryNames, number>
           );
-          console.log({ value, productCosts, maxDelta, subtractions });
+          console.log("Requirements necessary", {
+            value,
+            productCosts,
+            maxDelta,
+            subtractions
+          });
         }
       }
     );

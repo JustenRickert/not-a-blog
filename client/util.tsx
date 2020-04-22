@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import path from "isomorphic-path";
 
 import { keys, omit, withRandomOffset } from "../util";
+import { Industries } from "../types";
 
 export * from "../util";
 
@@ -68,6 +69,17 @@ export const serializeIndustryDateInformation = ({
   lastUpdateSupplyDate: new Date(lastUpdateSupplyDate),
   lastEmploymentUpdateDate: new Date(lastEmploymentUpdateDate)
 });
+
+export const serializeIndustriesDateInformation = (
+  industriesInformation: Industries
+) =>
+  Object.entries(industriesInformation).reduce(
+    (acc, [name, industry]) => ({
+      ...acc,
+      [name]: serializeIndustryDateInformation(industry)
+    }),
+    {}
+  );
 
 export const shallowEqualOmitting = (...keys) => (previous, next) => {
   previous = omit(previous, keys);

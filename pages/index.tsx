@@ -5,12 +5,11 @@ import dynamic from "next/dynamic";
 import {
   createSlice,
   domainPath,
-  serializeIndustryDateInformation,
+  serializeIndustriesDateInformation,
   update
 } from "../client/util";
 import Page from "../client/page";
 import Login from "../client/login";
-import { Industries } from "../types";
 
 const Main = dynamic(() => import("../client/main"));
 
@@ -35,17 +34,6 @@ const serializeUserDateInformation = ({
   lastUpdatePointsDate: new Date(lastUpdatePointsDate),
   lastPopulationChangeDate: new Date(lastPopulationChangeDate)
 });
-
-const serializeIndustriesDateInformation = (
-  industriesInformation: Industries
-) =>
-  Object.entries(industriesInformation).reduce(
-    (acc, [name, industry]) => ({
-      ...acc,
-      [name]: serializeIndustryDateInformation(industry)
-    }),
-    {}
-  );
 
 const slice = createSlice({
   name: "state",

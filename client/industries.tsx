@@ -5,10 +5,11 @@ import { INDUSTRIES_UPDATE_SUPPLY_TIMEOUT } from "../constants";
 import {
   createSlice,
   plural,
-  serializeIndustryDateInformation,
+  serializeIndustriesDateInformation,
   update,
   useDeviationInterval,
-  formatInt
+  formatInt,
+  serializeIndustryDateInformation
 } from "./util";
 import { Industries as IndustriesType } from "../types";
 
@@ -44,12 +45,21 @@ const labels = {
 const slice = createSlice<IndustriesType>({
   name: "state",
   reducerMap: {
-    updateIndustry(state, { payload: { industry, industryName } }) {
+    resetIndustryUpdateSupplyTimeout(state, { payload: { industryName } }) {
+      return update(state, [industryName, "lastUpdateSupplyDate"], new Date());
+    },
+    updateIndustry(state, { payload: { industryName, industry } }) {
       return update(
         state,
         [industryName],
         serializeIndustryDateInformation(industry)
       );
+    },
+    updateIndustries(state, { payload: industries }) {
+      return {
+        ...state,
+        ...serializeIndustriesDateInformation(industries)
+      };
     }
   }
 });
@@ -78,8 +88,16 @@ export default function Industries({
           industryName
         })
           .then(res => res.json())
-          .then(industry =>
-            slice.actions.updateIndustry({ industry, industryName })
+          .then(
+            industries => slice.actions.updateIndustries(industries),
+            // Sometimes we're not very good at programming, and we don't want
+            // to infinite loop :)
+            e => {
+              console.error(e);
+              return slice.actions.resetIndustryUpdateSupplyTimeout({
+                industryName
+              });
+            }
           )
           .then(dispatch),
       lastUpdateSupplyDate,
