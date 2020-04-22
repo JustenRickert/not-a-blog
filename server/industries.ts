@@ -1,14 +1,14 @@
-const assert = require("assert");
-const express = require("express");
+import assert from "assert";
+import express from "express";
 
-const { authenticationMiddleware } = require("./util.js");
-const {
+import { authenticationMiddleware } from "./util";
+import {
   industriesInformation,
   employIndustry,
   updateSupply
-} = require("./api/industries.js");
+} from "./api/industries";
 
-module.exports = createIndustriesRoute = db => {
+export default function createIndustriesRoute(db) {
   const router = express.Router();
 
   router.use(authenticationMiddleware);
@@ -43,4 +43,4 @@ module.exports = createIndustriesRoute = db => {
   });
 
   return router;
-};
+}

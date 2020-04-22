@@ -1,9 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import path from "isomorphic-path";
 
-import { omit, withRandomOffset } from "../util.js";
+import { keys, omit, withRandomOffset } from "../util";
 
-export * from "../util.js";
+export * from "../util";
 
 export const domainPath = (req, urlPath) => {
   if (!req) return urlPath;
@@ -16,21 +16,29 @@ const rest = xs => xs.slice(1);
 
 // const complement = p => (...args) => !p(...args);
 
-export const createSlice = ({ name, reducerMap, initialState }) => {
-  const actions = Object.keys(reducerMap).reduce(
+export const createSlice = <S extends any, A extends string = string>({
+  name,
+  reducerMap,
+  initialState
+}: {
+  name: string;
+  reducerMap: Record<A, <P>(state: S, { payload: P }) => S>;
+  initialState?: S;
+}) => {
+  const actions = keys(reducerMap).reduce(
     (actions, key) =>
       Object.assign(actions, {
         [key]: payload => ({ sliceName: name, type: key, payload })
       }),
-    {}
+    {} as Record<A, <P>(payload?: P) => { payload: P }>
   );
   const reducer = (state = initialState, action = undefined) => {
     if (!action || action.sliceName !== name) return state;
-    return reducerMap[action.type](state, action);
+    return reducerMap[action.type](state, action) as S;
   };
   return {
     actions,
-    reducer
+    reducer: reducer as ((state: S, action: any) => S)
   };
 };
 
@@ -70,7 +78,7 @@ export const useDeviationInterval = (
   callback,
   lastUpdateDate,
   ms,
-  offsetPercentage = 0.1
+  offsetPercentage = 0.5
 ) => {
   useEffect(() => {
     const sinceLast = Date.now() - lastUpdateDate.getTime();

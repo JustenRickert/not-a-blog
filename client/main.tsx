@@ -1,11 +1,11 @@
 import { useEffect, useReducer } from "react";
 import dynamic from "next/dynamic";
 
-import { POPULATION_GROWTH_TIMEOUT } from "../constants.js";
-import { createSlice, formatInt } from "./util.js";
-import Industries from "./industries.js";
+import { POPULATION_GROWTH_TIMEOUT } from "../constants";
+import { createSlice, formatInt } from "./util";
+import Industries from "./industries";
 
-const GetPointsButton = dynamic(() => import("./get-points-button.js"), {
+const GetPointsButton = dynamic(() => import("./get-points-button"), {
   ssr: false // relies on time, which is inconsistent between client and server
 });
 
@@ -23,9 +23,7 @@ const slice = createSlice({
   reducerMap: {
     updatePopulation(
       state,
-      {
-        payload: { population, lastPopulationChangeDate }
-      }
+      { payload: { population, lastPopulationChangeDate } }
     ) {
       return {
         ...state,
@@ -33,12 +31,7 @@ const slice = createSlice({
         lastPopulationChangeDate: new Date(lastPopulationChangeDate)
       };
     },
-    updatePointsRetrieve(
-      state,
-      {
-        payload: { points, lastUpdatePointsDate }
-      }
-    ) {
+    updatePointsRetrieve(state, { payload: { points, lastUpdatePointsDate } }) {
       return {
         ...state,
         points,

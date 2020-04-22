@@ -7,13 +7,14 @@ import {
   domainPath,
   serializeIndustryDateInformation,
   update
-} from "../client/util.js";
-import Page from "../client/page.js";
-import Login from "../client/login.js";
+} from "../client/util";
+import Page from "../client/page";
+import Login from "../client/login";
+import { Industries } from "../types";
 
-const Main = dynamic(() => import("../client/main.js"));
+const Main = dynamic(() => import("../client/main"));
 
-const fetchUserInformation = req =>
+const fetchUserInformation = (req?: Request) =>
   fetch(domainPath(req, "/api/user/user-information"), {
     headers: req && req.headers
   });
@@ -35,7 +36,9 @@ const serializeUserDateInformation = ({
   lastPopulationChangeDate: new Date(lastPopulationChangeDate)
 });
 
-const serializeIndustriesDateInformation = industriesInformation =>
+const serializeIndustriesDateInformation = (
+  industriesInformation: Industries
+) =>
   Object.entries(industriesInformation).reduce(
     (acc, [name, industry]) => ({
       ...acc,

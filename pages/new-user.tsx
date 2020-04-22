@@ -1,25 +1,12 @@
-import fetch from "isomorphic-unfetch";
 import { useReducer } from "react";
-import Link from "next/link";
-import { createSlice, update } from "./util.js";
 
-const LOGIN_DEFAULT = {
-  username: "",
-  password: ""
-};
+import { createSlice, update } from "../client/util";
+import Page from "../client/page";
 
 const slice = createSlice({
   name: "state",
   reducerMap: {
-    resetLogin(state) {
-      return update(state, "login", LOGIN_DEFAULT);
-    },
-    updateLogin(
-      state,
-      {
-        payload: { key, value }
-      }
-    ) {
+    updateLogin(state, { payload: { key, value } }) {
       return update(state, ["login", key], value);
     },
     setError(state, { payload: error }) {
@@ -28,21 +15,26 @@ const slice = createSlice({
   }
 });
 
-export default function Login({ onChangeUserInformation }) {
+export default function NewUser({}) {
   const [state, dispatch] = useReducer(slice.reducer, {
     error: false,
-    login: LOGIN_DEFAULT
+    login: {
+      username: "",
+      password: ""
+    }
   });
-  const handleFormUpdate = e =>
+  const handleFormUpdate = e => {
+    if (state.error) dispatch(slice.actions.setError(false));
     dispatch(
       slice.actions.updateLogin({
         key: e.target.name,
         value: e.target.value
       })
     );
+  };
   const handleFormSubmit = e => {
     e.preventDefault();
-    fetch("/api/login/login-user", {
+    fetch("/api/login/create-new-user", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -51,17 +43,16 @@ export default function Login({ onChangeUserInformation }) {
     }).then(res => {
       switch (res.status) {
         case 200:
-          onChangeUserInformation();
+        case 302:
+          window.location.href = "/";
           break;
         case 400:
           dispatch(slice.actions.setError(true));
-          dispatch(slice.actions.resetLogin());
-          break;
       }
     });
   };
   return (
-    <>
+    <Page>
       <form>
         <label htmlFor="username">Username: </label>
         <input
@@ -78,12 +69,13 @@ export default function Login({ onChangeUserInformation }) {
           onChange={handleFormUpdate}
           value={state.login.password}
         />
-        <input onClick={handleFormSubmit} type="submit" value="Login" />
-        {state.error && "ERROR"}
+        <input
+          onClick={handleFormSubmit}
+          type="submit"
+          value="Create new account"
+        />
+        {state.error && "Error"}
       </form>
-      <Link href="/new-user">
-        <button>Create new Account</button>
-      </Link>
-    </>
+    </Page>
   );
 }

@@ -1,7 +1,7 @@
 import { useReducer, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 
-import { INDUSTRIES_UPDATE_SUPPLY_TIMEOUT } from "../constants.js";
+import { INDUSTRIES_UPDATE_SUPPLY_TIMEOUT } from "../constants";
 import {
   createSlice,
   plural,
@@ -9,9 +9,10 @@ import {
   update,
   useDeviationInterval,
   formatInt
-} from "./util.js";
+} from "./util";
+import { Industries as IndustriesType } from "../types";
 
-const EmployButton = dynamic(() => import("./employ-button.js"), {
+const EmployButton = dynamic(() => import("./employ-button"), {
   ssr: false // time variation between server/client
 });
 
@@ -34,19 +35,16 @@ const fetchUpdateSupply = payload =>
   });
 
 const labels = {
+  agriculture: "Agriculture",
   baking: "Baking",
-  handTool: "Hand tools"
+  handTool: "Hand tools",
+  textiles: "Textiles"
 };
 
-const slice = createSlice({
+const slice = createSlice<IndustriesType>({
   name: "state",
   reducerMap: {
-    updateIndustry(
-      state,
-      {
-        payload: { industry, industryName }
-      }
-    ) {
+    updateIndustry(state, { payload: { industry, industryName } }) {
       return update(
         state,
         [industryName],
@@ -56,7 +54,13 @@ const slice = createSlice({
   }
 });
 
-export default function Industries({ user, industriesInformation }) {
+export default function Industries({
+  user,
+  industriesInformation
+}: {
+  user: any;
+  industriesInformation: IndustriesType;
+}) {
   const [state, dispatch] = useReducer(slice.reducer, industriesInformation);
 
   const industryEntries = Object.entries(state);
@@ -98,7 +102,7 @@ export default function Industries({ user, industriesInformation }) {
   return (
     <>
       <h3>Industries</h3>
-      <p>{totalUnallocated} unemployed aliens</p>
+      <p>{formatInt(totalUnallocated)} unemployed aliens</p>
       <ul>
         {industryEntries.map(
           ([

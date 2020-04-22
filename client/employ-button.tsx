@@ -1,6 +1,6 @@
 import { useEffect, useState, memo } from "react";
 
-import { INDUSTRIES_EMPLOYMENT_TIMEOUT } from "../constants.js";
+import { INDUSTRIES_EMPLOYMENT_TIMEOUT } from "../constants";
 
 function EmployButton({
   industryName,

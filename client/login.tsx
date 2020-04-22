@@ -1,17 +1,20 @@
+import fetch from "isomorphic-unfetch";
 import { useReducer } from "react";
+import Link from "next/link";
+import { createSlice, update } from "./util";
 
-import { createSlice, update } from "../client/util.js";
-import Page from "../client/page.js";
+const LOGIN_DEFAULT = {
+  username: "",
+  password: ""
+};
 
-const slice = createSlice({
+const slice = createSlice<{ error: boolean; login: typeof LOGIN_DEFAULT }>({
   name: "state",
   reducerMap: {
-    updateLogin(
-      state,
-      {
-        payload: { key, value }
-      }
-    ) {
+    resetLogin(state) {
+      return update(state, "login", LOGIN_DEFAULT);
+    },
+    updateLogin(state, { payload: { key, value } }) {
       return update(state, ["login", key], value);
     },
     setError(state, { payload: error }) {
@@ -20,26 +23,21 @@ const slice = createSlice({
   }
 });
 
-export default function NewUser({}) {
+export default function Login({ onChangeUserInformation }) {
   const [state, dispatch] = useReducer(slice.reducer, {
     error: false,
-    login: {
-      username: "",
-      password: ""
-    }
+    login: LOGIN_DEFAULT
   });
-  const handleFormUpdate = e => {
-    if (state.error) dispatch(slice.actions.setError(false));
+  const handleFormUpdate = e =>
     dispatch(
       slice.actions.updateLogin({
         key: e.target.name,
         value: e.target.value
       })
     );
-  };
   const handleFormSubmit = e => {
     e.preventDefault();
-    fetch("/api/login/create-new-user", {
+    fetch("/api/login/login-user", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -48,16 +46,17 @@ export default function NewUser({}) {
     }).then(res => {
       switch (res.status) {
         case 200:
-        case 302:
-          window.location = "/";
+          onChangeUserInformation();
           break;
         case 400:
           dispatch(slice.actions.setError(true));
+          dispatch(slice.actions.resetLogin());
+          break;
       }
     });
   };
   return (
-    <Page>
+    <>
       <form>
         <label htmlFor="username">Username: </label>
         <input
@@ -74,13 +73,12 @@ export default function NewUser({}) {
           onChange={handleFormUpdate}
           value={state.login.password}
         />
-        <input
-          onClick={handleFormSubmit}
-          type="submit"
-          value="Create new account"
-        />
-        {state.error && "Error"}
+        <input onClick={handleFormSubmit} type="submit" value="Login" />
+        {state.error && "ERROR"}
       </form>
-    </Page>
+      <Link href="/new-user">
+        <button>Create new Account</button>
+      </Link>
+    </>
   );
 }

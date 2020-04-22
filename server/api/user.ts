@@ -1,17 +1,16 @@
-const assert = require("assert");
-const { ObjectId } = require("mongodb");
+import assert from "assert";
+import { ObjectId } from "mongodb";
 
-const { range, withRandomOffset } = require("../util.js");
-const { USER_COLLECTION, POPULATION_INITIAL } = require("./constants.js");
-const {
+import { withRandomOffset } from "../util";
+import { USER_COLLECTION, POPULATION_INITIAL } from "./constants";
+import {
   POINTS_PER_MS,
   POPULATION_CAPACITY_INITIAL,
   POPULATION_CAPACITY_PER_POINT,
-  POPULATION_GROWTH_PERCENTAGE,
-  POPULATION_GROWTH_SECONDS
-} = require("../../constants.js");
+  POPULATION_GROWTH_PERCENTAGE
+} from "../../constants";
 
-module.exports.authenticateUser = (db, { username, password }) => {
+export function authenticateUser(db, { username, password }) {
   assert(typeof username === "string", "`username` is a string");
   assert(typeof password === "string", "`password` is a string");
   return db
@@ -21,9 +20,9 @@ module.exports.authenticateUser = (db, { username, password }) => {
       if (!result) throw { error: "NO_USERNAME_OR_NO_BAD_PASSWORD" };
       return result._id;
     });
-};
+}
 
-module.exports.newUser = (db, { username, password }) => {
+export function newUser(db, { username, password }) {
   assert(typeof username === "string", "`username` is a string");
   assert(typeof password === "string", "`password` is a string");
   const collection = db.collection(USER_COLLECTION);
@@ -39,20 +38,20 @@ module.exports.newUser = (db, { username, password }) => {
       lastPopulationChangeDate: new Date()
     });
   });
-};
+}
 
 // AUTHENTICATED ROUTES
 
-module.exports.userInformation = (db, { id }) => {
+export function userInformation(db, { id }) {
   assert(typeof id === "string", "`id` is a string");
   console.log("WHAT", id);
   return db
     .collection(USER_COLLECTION)
     .findOne({ _id: ObjectId(id) }, { projection: { _id: false } })
     .then(({ password: _password, ...rest }) => rest);
-};
+}
 
-module.exports.updatePopulation = (db, { id, updateDate }) => {
+export function updatePopulation(db, { id, updateDate }) {
   assert(typeof id === "string", "`id` is a string");
   assert(updateDate instanceof Date, "`updateDate` is a Date");
   const col = db.collection(USER_COLLECTION);
@@ -87,9 +86,9 @@ module.exports.updatePopulation = (db, { id, updateDate }) => {
         }
       );
     });
-};
+}
 
-module.exports.updatePoints = (db, { id, updateDate }) => {
+export function updatePoints(db, { id, updateDate }) {
   assert(typeof id === "string", "`id` is a string");
   assert(updateDate instanceof Date, "`updateDate` should be a date");
   const col = db.collection(USER_COLLECTION);
@@ -116,4 +115,4 @@ module.exports.updatePoints = (db, { id, updateDate }) => {
         }
       );
     });
-};
+}

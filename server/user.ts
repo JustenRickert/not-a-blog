@@ -1,16 +1,12 @@
-const assert = require("assert");
-const express = require("express");
+import assert from "assert";
+import express from "express";
 
-const {
-  userInformation,
-  updatePoints,
-  updatePopulation
-} = require("./api/user.js");
-const { authenticationMiddleware } = require("./util.js");
+import { userInformation, updatePoints, updatePopulation } from "./api/user";
+import { authenticationMiddleware } from "./util";
 
 // TODO Do these need `catch`s?
 
-module.exports = createUserRouter = db => {
+export default function createUserRouter(db) {
   const router = express.Router();
 
   router.use(authenticationMiddleware);
@@ -42,4 +38,4 @@ module.exports = createUserRouter = db => {
   });
 
   return router;
-};
+}

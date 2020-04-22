@@ -1,6 +1,7 @@
 {
   "verbose": true,
   "ignore": ["node_modules", ".next", "data"],
-  "watch": ["server/**/*", "index.js", "constants.js", "util.js"],
-  "ext": "js json"
+  "watch": ["server/**/*", "index.ts", "constants.ts", "util.js"],
+  "exec": "ts-node --project tsconfig.server.json",
+  "ext": "js ts json"
 }

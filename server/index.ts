@@ -1,14 +1,16 @@
-const express = require("express");
-const { parse } = require("url");
-const next = require("next");
-const bodyParser = require("body-parser");
-const session = require("express-session");
-const { MongoClient } = require("mongodb");
-const MongoSessionStore = require("connect-mongo")(session);
+import express from "express";
+import { parse } from "url";
+import next from "next";
+import bodyParser from "body-parser";
+import session from "express-session";
+import { MongoClient } from "mongodb";
+import ConnectMongo from "connect-mongo";
 
-const createLoginRouter = require("./server/login.js");
-const createUserRouter = require("./server/user.js");
-const createIndustriesRoute = require("./server/industries.js");
+import createLoginRouter from "./login";
+import createUserRouter from "./user";
+import createIndustriesRoute from "./industries";
+
+const MongoSessionStore = ConnectMongo(session);
 
 const mongoUrl = "mongodb://localhost:27017";
 

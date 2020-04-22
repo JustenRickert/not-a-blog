@@ -1,4 +1,4 @@
-import Page from "../client/page.js";
+import Page from "../client/page";
 
 export default function About({}) {
   return (

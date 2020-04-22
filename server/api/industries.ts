@@ -1,18 +1,18 @@
-const assert = require("assert");
-const { ObjectId } = require("mongodb");
+import assert from "assert";
+import { ObjectId } from "mongodb";
 
-const { INDUSTRIES_COLLECTION, USER_COLLECTION } = require("./constants.js");
-const {
+import { INDUSTRIES_COLLECTION, USER_COLLECTION } from "./constants";
+import {
   INDUSTRIES_STUB,
   INDUSTRIES_EMPLOYMENT_GROWTH_PERCENTAGE,
   INDUSTRIES_UPDATE_SUPPLY_RATE
-} = require("../../constants.js");
-const { range, withRandomMinusOffset } = require("../util.js");
+} from "../../constants";
+import { keys, withRandomMinusOffset } from "../util";
+import { IndustryNames } from "../../types";
 
-const industryNames = Object.keys(INDUSTRIES_STUB);
+const industryNames = keys(INDUSTRIES_STUB);
 
-module.exports.industriesInformation = (db, { id }) => {
-  assert(typeof id === "string", "`id` is a string");
+export function industriesInformation(db, { id }: { id: string }) {
   const col = db.collection(INDUSTRIES_COLLECTION);
   return col
     .findOne({ _id: ObjectId(id) }, { projection: { _id: false } })
@@ -38,18 +38,20 @@ module.exports.industriesInformation = (db, { id }) => {
           .then(({ _id, ...results }) => results);
       return result;
     });
-};
+}
 
-module.exports.employIndustry = async (
+export async function employIndustry(
   db,
-  { id, updateDate, industryName }
-) => {
-  assert(typeof id === "string", "`id` is be a string");
-  assert(updateDate instanceof Date, "`updateDate` is be a Date");
-  assert(
-    industryNames.includes(industryName),
-    "`industryName` should be one of the available industries"
-  );
+  {
+    id,
+    updateDate,
+    industryName
+  }: {
+    id: string;
+    updateDate: Date;
+    industryName: IndustryNames;
+  }
+) {
   const [population, industries] = await Promise.all([
     db
       .collection(USER_COLLECTION)
@@ -59,7 +61,7 @@ module.exports.employIndustry = async (
       .collection(INDUSTRIES_COLLECTION)
       .findOne({ _id: ObjectId(id) }, { projection: { _id: false } })
   ]);
-  const totalAllocated = Object.values(industries).reduce(
+  const totalAllocated = Object.values(industries).reduce<number>(
     (totalAllocated, { allocation }) => totalAllocated + allocation,
     0
   );
@@ -92,49 +94,68 @@ module.exports.employIndustry = async (
       }
     )
     .then(result => result.value[industryName]);
-};
+}
 
-module.exports.updateSupply = (db, { id, updateDate, industryName }) => {
-  assert(typeof id === "string", "`id` should a string");
-  assert(updateDate instanceof Date, "`updateDate` should be a Date");
-  assert(
-    industryNames.includes(industryName),
-    "`industryName` should be one of the available industries"
-  );
+export function updateSupply(
+  db,
+  {
+    id,
+    updateDate,
+    industryName
+  }: {
+    id: string;
+    updateDate: Date;
+    industryName: IndustryNames;
+  }
+) {
   const col = db.collection(INDUSTRIES_COLLECTION);
   return col
     .findOne({ _id: ObjectId(id) })
     .then(
       ({
         _id,
-        [industryName]: { supply, allocation, lastUpdateSupplyDate }
+        [industryName]: { allocation, lastUpdateSupplyDate },
+        ...industries
       }) => {
         const rate = INDUSTRIES_UPDATE_SUPPLY_RATE[industryName];
         const secondsDiff =
           (updateDate.getTime() - lastUpdateSupplyDate.getTime()) / 1000;
-        const delta = allocation * rate * secondsDiff;
-        return col
-          .findOneAndUpdate(
-            {
-              _id
-            },
-            {
-              $set: {
-                [[industryName, "lastUpdateSupplyDate"].join(".")]: updateDate
+        if (typeof rate === "number") {
+          const delta = allocation * rate * secondsDiff;
+          return col
+            .findOneAndUpdate(
+              {
+                _id
               },
-              $inc: {
-                [[industryName, "supply"].join(".")]: delta
+              {
+                $set: {
+                  [[industryName, "lastUpdateSupplyDate"].join(".")]: updateDate
+                },
+                $inc: {
+                  [[industryName, "supply"].join(".")]: delta
+                }
+              },
+              {
+                returnOriginal: false,
+                projection: {
+                  _id: false,
+                  [industryName]: true
+                }
               }
-            },
-            {
-              returnOriginal: false,
-              projection: {
-                _id: false,
-                [industryName]: true
-              }
-            }
-          )
-          .then(result => result.value[industryName]);
+            )
+            .then(result => result.value);
+        } else {
+          const { value, ...productCosts } = rate;
+          const maxDelta = allocation * value * secondsDiff;
+          const subtractions = Object.entries(productCosts).reduce(
+            (subtractions, [otherIndustryName, cost]) => ({
+              ...subtractions,
+              [otherIndustryName]: cost * maxDelta
+            }),
+            {} as Record<IndustryNames, number>
+          );
+          console.log({ value, productCosts, maxDelta, subtractions });
+        }
       }
     );
-};
+}

@@ -1,8 +1,8 @@
-const express = require("express");
+import express from "express";
 
-const { newUser, authenticateUser } = require("./api/user.js");
+import { newUser, authenticateUser } from "./api/user";
 
-module.exports = createLoginRouter = db => {
+export default function createLoginRouter(db) {
   const router = express.Router();
 
   router.post("/create-new-user", (req, res) => {
@@ -26,4 +26,4 @@ module.exports = createLoginRouter = db => {
   });
 
   return router;
-};
+}
