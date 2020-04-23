@@ -81,7 +81,6 @@ export default function Industries({
       () =>
         fetchUpdateSupply({ industryName })
           .then(res => res.json())
-          .then(result => (console.log(result), result))
           .then(
             industries => slice.actions.updateIndustries(industries),
             // Sometimes we're not very good at programming, and we don't want
@@ -100,7 +99,6 @@ export default function Industries({
   );
 
   const handleEmploy = industryName => {
-    console.log({ industryName });
     fetchEmployIndustry({
       industryName
     })
@@ -133,7 +131,8 @@ export default function Industries({
                 <li>
                   <EmployButton
                     industryName={industryName}
-                    // TODO this causes unnecessary rerenders...
+                    // TODO this inline callback causes unnecessary rerenders...
+                    // :shrug:
                     onClick={() => handleEmploy(industryName)}
                     lastEmploymentUpdateDate={lastEmploymentUpdateDate}
                     disabled={!totalUnallocated}

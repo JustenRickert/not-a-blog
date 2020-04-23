@@ -26,8 +26,8 @@ export const INDUSTRY_LABELS: Record<IndustryName, string> = {
   agriculture: "Farming and junk",
   baking: "Cooking and stuff",
   forestry: "Nurturing trees and things",
-  handTool: "Making shit",
-  mining: "Getting things out of the ground",
+  handTool: "Making shit (hand tools)",
+  mining: "Getting things out of the ground (mining)",
   textiles: "Wearing clothes"
 };
 
@@ -54,7 +54,7 @@ export const INDUSTRIES_EMPLOYMENT_GROWTH_PERCENTAGE: Record<
 
 /**
  * TODO: Could probably write a test to validate that everything is actually
- * attainable. Would be a cool recursive function
+ * attainable. Would be a cool, simple recursive function
  *
  * @remarks
  *
@@ -72,9 +72,9 @@ export const INDUSTRIES_UPDATE_SUPPLY_RATE: Record<
   IndustryName,
   number | ({ unit: number } & Partial<Record<IndustryName, number>>)
 > = {
-  agriculture: 0.5,
+  agriculture: 0.05,
   baking: {
-    unit: 0.1,
+    unit: 0.02,
     agriculture: 3
   },
   forestry: {
@@ -96,4 +96,4 @@ export const INDUSTRIES_UPDATE_SUPPLY_RATE: Record<
   }
 };
 
-export const INDUSTRIES_UPDATE_SUPPLY_TIMEOUT = 15e3;
+export const INDUSTRIES_UPDATE_SUPPLY_TIMEOUT = 120e3;

@@ -83,7 +83,7 @@ export default function Home({ userInformation, industriesInformation }) {
       );
   if (!state.userInformation)
     return (
-      <Page>
+      <Page nav={false}>
         <Login onChangeUserInformation={handleUserInformationChange} />
       </Page>
     );

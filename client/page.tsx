@@ -1,12 +1,29 @@
 import Head from "next/head";
+import Link from "next/link";
 
-export default function Page({ children }) {
+export default function Page({ nav = true, children }) {
   return (
     <div className="container">
       <Head>
-        <title>Create Next App</title>
+        <title>Not Blog</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
+
+      {nav && (
+        <nav>
+          <h2>Game</h2>
+          <Link href="/index">
+            <div>
+              <a>Me</a>
+            </div>
+          </Link>
+          <Link href="/forum">
+            <div>
+              <a>Forum</a>
+            </div>
+          </Link>
+        </nav>
+      )}
 
       <main>{children}</main>
 
@@ -28,6 +45,28 @@ export default function Page({ children }) {
           flex-direction: column;
           justify-content: center;
           align-items: center;
+        }
+
+        nav {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          min-height: 5rem;
+          width: 100%;
+          background-color: light-gray;
+        }
+
+        nav div {
+          display: flex;
+          min-width: 5rem;
+          min-height: 5rem;
+          justify-content: flex-end;
+          align-items: flex-end;
+        }
+
+        nav div:hover {
+          cursor: pointer;
+          background-color: gray;
         }
 
         main {

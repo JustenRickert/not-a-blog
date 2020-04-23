@@ -169,6 +169,12 @@ export function updateSupply(
                 [[industryName, "lastUpdateSupplyDate"].join(".")]: updateDate,
                 ...Object.entries(maxSubtractions).reduce(
                   (subtractions, [otherIndustryName, maxSubtraction]) => {
+                    console.log({
+                      industry: { allocation },
+                      other: industries[otherIndustryName],
+                      deltaRatio,
+                      maxSubtraction
+                    });
                     assert(
                       industries[otherIndustryName].supply -
                         deltaRatio * maxSubtraction >=

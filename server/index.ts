@@ -5,10 +5,12 @@ import bodyParser from "body-parser";
 import session from "express-session";
 import { MongoClient } from "mongodb";
 import ConnectMongo from "connect-mongo";
+import expressWs from "express-ws";
 
 import createLoginRouter from "./login";
 import createUserRouter from "./user";
 import createIndustriesRoute from "./industries";
+import createForumRouter from "./forum";
 
 const MongoSessionStore = ConnectMongo(session);
 
@@ -16,7 +18,8 @@ const mongoUrl = "mongodb://localhost:27017";
 
 const mongoDbName = "notblog";
 
-const server = express();
+const wsServer = expressWs(express());
+const server = wsServer.app;
 
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
@@ -53,6 +56,8 @@ Promise.all([app.prepare(), mongoClientPromise]).then(([, client]) => {
   server.use("/api/login", createLoginRouter(db));
   server.use("/api/user", createUserRouter(db));
   server.use("/api/industries", createIndustriesRoute(db));
+
+  server.use("/forum", createForumRouter(db, wsServer));
 
   server.all("*", handle as any);
 
