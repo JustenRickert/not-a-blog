@@ -16,3 +16,6 @@ export const authenticationMiddleware = (req, res, next) => {
   }
   next();
 };
+
+export const entries = <O>(o: O) =>
+  Object.entries(o) as [keyof O, O[keyof O]][];

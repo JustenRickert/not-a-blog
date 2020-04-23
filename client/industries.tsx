@@ -1,7 +1,10 @@
 import { useReducer, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 
-import { INDUSTRIES_UPDATE_SUPPLY_TIMEOUT } from "../constants";
+import {
+  INDUSTRIES_UPDATE_SUPPLY_TIMEOUT,
+  INDUSTRY_LABELS
+} from "../constants";
 import {
   createSlice,
   plural,
@@ -34,13 +37,6 @@ const fetchUpdateSupply = payload =>
     },
     body: JSON.stringify(payload)
   });
-
-const labels = {
-  agriculture: "Agriculture",
-  baking: "Baking",
-  handTool: "Hand tools",
-  textiles: "Textiles"
-};
 
 const slice = createSlice<IndustriesType>({
   name: "state",
@@ -83,10 +79,7 @@ export default function Industries({
   industryEntries.forEach(([industryName, { lastUpdateSupplyDate }]) =>
     useDeviationInterval(
       () =>
-        fetchUpdateSupply({
-          updateDate: new Date(),
-          industryName
-        })
+        fetchUpdateSupply({ industryName })
           .then(res => res.json())
           .then(result => (console.log(result), result))
           .then(
@@ -106,10 +99,10 @@ export default function Industries({
     )
   );
 
-  const handleEmploy = (industryName, updateDate) => {
+  const handleEmploy = industryName => {
+    console.log({ industryName });
     fetchEmployIndustry({
-      industryName,
-      updateDate
+      industryName
     })
       .then(res => res.json())
       .then(industry =>
@@ -129,7 +122,9 @@ export default function Industries({
             { allocation, supply, lastEmploymentUpdateDate }
           ]) => (
             <li key={industryName}>
-              <h4>{labels[industryName]}</h4>
+              <h4>
+                <i>{INDUSTRY_LABELS[industryName]}</i>
+              </h4>
               <p>
                 Employs {allocation} {plural(allocation, "alien", "aliens")}
               </p>
@@ -139,7 +134,7 @@ export default function Industries({
                   <EmployButton
                     industryName={industryName}
                     // TODO this causes unnecessary rerenders...
-                    onClick={() => handleEmploy(industryName, new Date())}
+                    onClick={() => handleEmploy(industryName)}
                     lastEmploymentUpdateDate={lastEmploymentUpdateDate}
                     disabled={!totalUnallocated}
                   />

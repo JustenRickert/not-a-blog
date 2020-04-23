@@ -1,5 +1,5 @@
 import assert from "assert";
-import { ObjectId } from "mongodb";
+import { ObjectId, Db } from "mongodb";
 
 import { INDUSTRIES_COLLECTION, USER_COLLECTION } from "./constants";
 import {
@@ -7,20 +7,20 @@ import {
   INDUSTRIES_EMPLOYMENT_GROWTH_PERCENTAGE,
   INDUSTRIES_UPDATE_SUPPLY_RATE
 } from "../../constants";
-import { keys, withRandomMinusOffset } from "../util";
+import { entries, keys, withRandomMinusOffset } from "../util";
 import { IndustryName, Industry, Industries } from "../../types";
 
 const industryNames = keys(INDUSTRIES_STUB);
 
-export function industriesInformation(db, { id }: { id: string }) {
+export function industriesInformation(db: Db, { id }: { id: string }) {
   const col = db.collection(INDUSTRIES_COLLECTION);
   return col
-    .findOne({ _id: ObjectId(id) }, { projection: { _id: false } })
+    .findOne({ _id: new ObjectId(id) }, { projection: { _id: false } })
     .then(async result => {
       if (!result)
         result = await col
           .insertOne({
-            _id: ObjectId(id),
+            _id: new ObjectId(id),
             ...Object.entries(INDUSTRIES_STUB).reduce(
               (acc, [key, value]) => ({
                 ...acc,
@@ -55,11 +55,11 @@ export async function employIndustry(
   const [population, industries] = await Promise.all([
     db
       .collection(USER_COLLECTION)
-      .findOne({ _id: ObjectId(id) }, { projection: { population: true } })
+      .findOne({ _id: new ObjectId(id) }, { projection: { population: true } })
       .then(({ population }) => Math.floor(population)),
     db
       .collection(INDUSTRIES_COLLECTION)
-      .findOne({ _id: ObjectId(id) }, { projection: { _id: false } })
+      .findOne({ _id: new ObjectId(id) }, { projection: { _id: false } })
   ]);
   const totalAllocated = Object.values(industries).reduce<number>(
     (totalAllocated, { allocation }) => totalAllocated + allocation,
@@ -73,7 +73,7 @@ export async function employIndustry(
   );
   return db.collection(INDUSTRIES_COLLECTION).findOneAndUpdate(
     {
-      _id: ObjectId(id)
+      _id: new ObjectId(id)
     },
     {
       $set: {
@@ -107,7 +107,7 @@ export function updateSupply(
 ) {
   const col = db.collection(INDUSTRIES_COLLECTION);
   return col
-    .findOne({ _id: ObjectId(id) })
+    .findOne({ _id: new ObjectId(id) })
     .then(
       ({
         _id,
@@ -142,24 +142,21 @@ export function updateSupply(
         } else {
           const { unit, ...productCosts } = rate;
           const maxDelta = allocation * unit * secondsDiff;
-          const maxSubtractions = Object.entries(productCosts).reduce(
+          const maxSubtractions = entries(productCosts).reduce(
             (subtractions, [otherIndustryName, costPerUnit]) => ({
               ...subtractions,
-              [otherIndustryName]: maxDelta / costPerUnit
+              [otherIndustryName]: maxDelta * costPerUnit
             }),
             {} as Record<IndustryName, number>
           );
-          const deltaRatio = Object.entries(maxSubtractions).reduce(
+          const deltaRatio = entries(maxSubtractions).reduce(
             (deltaRatio, [otherIndustryName, supplySubtraction]) => {
-              const otherIndustry = industries[otherIndustryName];
-              const possibleSubtraction = Math.min(
-                supplySubtraction,
-                otherIndustry.supply
-              );
-              return Math.min(
-                deltaRatio,
-                otherIndustry.supply / supplySubtraction
-              );
+              const otherIndustry = (industries as Industries)[
+                otherIndustryName
+              ];
+              return otherIndustry.supply < supplySubtraction
+                ? otherIndustry.supply / supplySubtraction
+                : deltaRatio;
             },
             1
           );
@@ -169,26 +166,48 @@ export function updateSupply(
             },
             {
               $set: {
-                [[industryName, "lastUpdateSupplyDate"].join(".")]: updateDate
+                [[industryName, "lastUpdateSupplyDate"].join(".")]: updateDate,
+                ...Object.entries(maxSubtractions).reduce(
+                  (subtractions, [otherIndustryName, maxSubtraction]) => {
+                    assert(
+                      industries[otherIndustryName].supply -
+                        deltaRatio * maxSubtraction >=
+                        0 || deltaRatio * maxSubtraction < 1,
+                      "Doing the below correction shouldn't affect numbers too irregularly"
+                    );
+                    return {
+                      ...subtractions,
+                      /**
+                       * Need to do the `Math.max` thing here because otherwise we
+                       * get rounding errors on the `deltaRatio` calculation that
+                       * causes negative supplies. JavaScript :shrug:
+                       */
+                      [[otherIndustryName, "supply"].join(".")]: Math.max(
+                        0,
+                        industries[otherIndustryName].supply -
+                          deltaRatio * maxSubtraction
+                      )
+                    };
+                  },
+                  {}
+                )
               },
-              $inc: Object.entries(maxSubtractions).reduce(
-                (subtractions, [otherIndustryName, maxSubtraction]) => ({
-                  ...subtractions,
-                  [[otherIndustryName, "supply"].join(".")]:
-                    -deltaRatio * maxSubtraction
-                }),
-                {
-                  [[industryName, "supply"].join(".")]: deltaRatio * maxDelta
-                }
-              )
+              $inc: {
+                [[industryName, "supply"].join(".")]: deltaRatio * maxDelta
+              }
             },
             {
               returnOriginal: false,
               projection: {
-                _id: false
+                _id: false,
+                [industryName]: true,
+                ...Object.keys(maxSubtractions).reduce(
+                  (acc, key) => ({ ...acc, [key]: true }),
+                  {}
+                )
               }
             }
-          ) as Promise<Industries>;
+          );
         }
       }
     );

@@ -1,10 +1,9 @@
+// @ts-nocheck
 import assert from "assert";
 import express from "express";
 
 import { userInformation, updatePoints, updatePopulation } from "./api/user";
 import { authenticationMiddleware } from "./util";
-
-// TODO Do these need `catch`s?
 
 export default function createUserRouter(db) {
   const router = express.Router();

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import assert from "assert";
 import express from "express";
 
@@ -27,7 +28,7 @@ export default function createIndustriesRoute(db) {
   router.post("/employ-industry", (req, res) => {
     employIndustry(db, {
       id: req.session.userId,
-      updateDate: new Date(req.body.updateDate),
+      updateDate: new Date(),
       industryName: req.body.industryName
     }).then(result => {
       res.json(result.value[req.body.industryName]);
@@ -37,7 +38,7 @@ export default function createIndustriesRoute(db) {
   router.post("/update-supply", (req, res) => {
     updateSupply(db, {
       id: req.session.userId,
-      updateDate: new Date(req.body.updateDate),
+      updateDate: new Date(),
       industryName: req.body.industryName
     })
       .then(result => res.json(result.value))

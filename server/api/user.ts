@@ -46,7 +46,7 @@ export function userInformation(db, { id }) {
   assert(typeof id === "string", "`id` is a string");
   return db
     .collection(USER_COLLECTION)
-    .findOne({ _id: ObjectId(id) }, { projection: { _id: false } })
+    .findOne({ _id: new ObjectId(id) }, { projection: { _id: false } })
     .then(({ password: _password, ...rest }) => rest);
 }
 
@@ -55,7 +55,7 @@ export function updatePopulation(db, { id, updateDate }) {
   assert(updateDate instanceof Date, "`updateDate` is a Date");
   const col = db.collection(USER_COLLECTION);
   return col
-    .findOne({ _id: ObjectId(id) })
+    .findOne({ _id: new ObjectId(id) })
     .then(({ points, population, lastPopulationChangeDate, _id }) => {
       const capacity =
         POPULATION_CAPACITY_INITIAL + points * POPULATION_CAPACITY_PER_POINT;
@@ -92,7 +92,7 @@ export function updatePoints(db, { id, updateDate }) {
   assert(updateDate instanceof Date, "`updateDate` should be a date");
   const col = db.collection(USER_COLLECTION);
   return col
-    .findOne({ _id: ObjectId(id) })
+    .findOne({ _id: new ObjectId(id) })
     .then(({ points, lastUpdatePointsDate, _id }) => {
       const msDiff = updateDate.valueOf() - lastUpdatePointsDate.valueOf();
       const pointsDelta = withRandomOffset(POINTS_PER_MS * msDiff);

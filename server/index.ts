@@ -54,7 +54,7 @@ Promise.all([app.prepare(), mongoClientPromise]).then(([, client]) => {
   server.use("/api/user", createUserRouter(db));
   server.use("/api/industries", createIndustriesRoute(db));
 
-  server.all("*", handle);
+  server.all("*", handle as any);
 
   server.listen(3000, err => {
     if (err) throw err;
